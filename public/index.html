@@ -353,6 +353,13 @@ function clearSession(){
 var storedUser = localStorage.getItem('vigor-user');
 if(storedUser){ try{ session.user = JSON.parse(storedUser); }catch(e){} }
 
+// ── link de convite (aluno se vincula ao personal que enviou o link) ──
+(function(){
+  var pFromUrl = new URLSearchParams(window.location.search).get('p');
+  if(pFromUrl) sessionStorage.setItem('vigor-invite-personal', pFromUrl);
+})();
+function getInvitePersonalId(){ return sessionStorage.getItem('vigor-invite-personal')||''; }
+
 // ── API ───────────────────────────────────────────────────────
 async function api(method, path, body){
   var opts = { method:method, headers:{} };
@@ -518,6 +525,12 @@ function authRegPersonalHtml(){
     '<div class="auth-links"><a href="#" data-auth="login">Já tenho conta — entrar</a></div></div>';
 }
 function authRegStudentHtml(){
+  if(!getInvitePersonalId()){
+    return '<div class="auth-card">'+brandHtml()+
+      '<h1>Link de convite necessário</h1>'+
+      '<div class="sub">Para criar sua conta de aluno, use o link de cadastro enviado pelo seu personal trainer (algo como .../?p=... ). Peça o link a ele.</div>'+
+      '<div class="auth-links"><a href="#" data-auth="login">Voltar ao login</a></div></div>';
+  }
   return '<div class="auth-card">'+brandHtml()+
     '<h1>Criar conta de aluno</h1><div class="sub">Preencha seus dados. Seu personal trainer irá confirmar o acesso.</div>'+
     '<div class="field"><label>Nome completo</label><input id="rsName" placeholder="Seu nome completo"></div>'+
@@ -582,9 +595,12 @@ async function doRegisterStudent(){
   var wa=(document.getElementById('rsWa')||{}).value||'';
   var pw=(document.getElementById('rsPw')||{}).value||'';
   if(!name||!email||!wa||!pw||!birth){ showToast('Preencha todos os campos obrigatórios.'); return; }
+  var personalId = getInvitePersonalId();
+  if(!personalId){ showToast('Link de convite inválido. Peça o link ao seu personal trainer.'); return; }
   try{
-    var r = await api('POST','/api/auth/register-student',{name,email,whatsapp:wa,cpf,birthdate:birth,password:pw});
+    var r = await api('POST','/api/auth/register-student',{name,email,whatsapp:wa,cpf,birthdate:birth,password:pw,personalId:personalId});
     saveSession(r.token, r.user);
+    sessionStorage.removeItem('vigor-invite-personal');
     showToast('Conta criada! Aguarde a ativação pelo seu personal trainer.');
     await refreshState();
     showApp();
@@ -877,7 +893,14 @@ function renderMensagens(){
 
 function renderPerfil(){
   var pp=state.personalProfile||{}, u=session.user||{};
+  var inviteUrl=window.location.origin+window.location.pathname+'?p='+encodeURIComponent(u.id||'');
   var h='<div class="row-head"><h2>Meu perfil</h2></div>'+
+    '<div class="card">'+
+    '<div class="field"><label>Link de cadastro para seus alunos</label>'+
+    '<input id="pfInviteLink" value="'+esc(inviteUrl)+'" readonly></div>'+
+    '<button class="btn small outline" data-action="copiar-invite" data-link="'+esc(inviteUrl)+'">Copiar link</button>'+
+    '<div class="sub" style="margin-top:6px;">Só quem se cadastrar por este link fica vinculado a você.</div>'+
+    '</div>'+
     '<div class="card">'+
     '<div class="field"><label>Nome do negócio</label><input id="pfBiz" value="'+esc(pp.business_name||u.name||'')+'" placeholder="Seu nome ou nome do estúdio"></div>'+
     '<div class="field"><label>WhatsApp de contato (com DDD)</label><input id="pfWa" value="'+esc(pp.whatsapp||'')+'" placeholder="5511999990000"></div>'+
@@ -1488,6 +1511,10 @@ document.addEventListener('click',async function(e){
   else if(action==='copiar-pix'){
     try{ await navigator.clipboard.writeText(ab.dataset.pix); showToast('Chave PIX copiada! ✓'); }
     catch(e){ showToast('Chave PIX: '+ab.dataset.pix); }
+  }
+  else if(action==='copiar-invite'){
+    try{ await navigator.clipboard.writeText(ab.dataset.link); showToast('Link de cadastro copiado! ✓'); }
+    catch(e){ showToast('Link: '+ab.dataset.link); }
   }
   else if(action==='wa-comprovante'){
     var msg='Olá! Acabei de efetuar o pagamento do '+ab.dataset.plan+'. Segue o comprovante:';
