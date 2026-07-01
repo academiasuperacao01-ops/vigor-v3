@@ -1,0 +1,13 @@
+{
+  "name": "vigor-backend",
+  "version": "1.0.0",
+  "description": "VIGOR — backend (API + banco de dados) para a plataforma de coaching online",
+  "main": "server.js",
+  "engines": { "node": ">=22.5.0" },
+  "scripts": {
+    "start": "node --no-warnings server.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0"
+  }
+}

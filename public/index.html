@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>VIGOR — Coaching à distância</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#13182B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#13182B;--paper:#F1EFEA;--raised:#fff;--steel:#DAD7CE;--steel-d:#A9A59C;
+  --red:#FF4D2E;--green:#1E8E5A;--yellow:#E8B400;--blue:#2E6FF2;--radius:12px;
+  --sidebar:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Archivo Black',sans-serif;font-weight:400;letter-spacing:-.01em;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+button,select,input,textarea{font-family:inherit;font-size:13px;}
+button{cursor:pointer;}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+a{color:var(--blue);text-decoration:none;}
+img{max-width:100%;}
+
+/* ── layout shells ── */
+.shell{display:none;}
+.shell.active{display:block;}
+
+/* ── AUTH ── */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--ink);}
+.auth-card{background:var(--raised);border-radius:var(--radius);padding:36px 32px;max-width:420px;width:100%;}
+.auth-card h1{font-size:28px;margin-bottom:4px;}
+.auth-card .sub{color:#666;font-size:13px;margin-bottom:24px;}
+.auth-card .brand{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.auth-card .brand .dot{width:10px;height:10px;border-radius:3px;background:var(--red);}
+.auth-card .brand .name{font-family:'Archivo Black';font-size:22px;color:var(--ink);}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--steel);border-radius:8px;padding:10px 12px;font-size:13px;background:#fff;color:var(--ink);}
+.field textarea{resize:vertical;min-height:70px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn.full{width:100%;}
+.btn.outline{background:transparent;border:1px solid var(--ink);color:var(--ink);}
+.btn.ghost{background:transparent;border:1px solid var(--steel-d);color:var(--ink);}
+.btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);}
+.btn.green{background:var(--green);}
+.btn.small{padding:6px 11px;font-size:12px;}
+.btn.icon{padding:8px;border-radius:8px;}
+.auth-links{margin-top:16px;text-align:center;font-size:12px;color:#888;}
+.auth-links a{color:var(--blue);}
+.divider{text-align:center;color:#aaa;font-size:12px;margin:16px 0;position:relative;}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--steel);}
+.divider::before{left:0;}.divider::after{right:0;}
+
+/* ── TOPBAR ── */
+.topbar{height:52px;background:var(--ink);display:flex;align-items:center;padding:0 16px;gap:12px;position:sticky;top:0;z-index:40;}
+.topbar .brand{display:flex;align-items:center;gap:6px;}
+.topbar .brand .dot{width:8px;height:8px;border-radius:2px;background:var(--red);}
+.topbar .brand .name{color:#fff;font-family:'Archivo Black';font-size:16px;}
+.topbar-spacer{flex:1;}
+.topbar button{background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);border-radius:20px;padding:5px 13px;font-size:12px;}
+.topbar button.active{background:var(--red);border-color:var(--red);color:#fff;}
+.topbar .avatar-btn{width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;border:none;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.accent-bar{height:3px;background:linear-gradient(90deg,var(--red),#FFB199);}
+
+/* ── APP LAYOUT ── */
+.app-layout{display:flex;height:calc(100vh - 55px);overflow:hidden;}
+.sidebar{width:var(--sidebar);background:var(--raised);border-right:1px solid var(--steel);padding:14px 10px;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.sidebar .role-tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#aaa;padding:0 6px;margin-bottom:12px;}
+.nav-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:none;padding:9px 10px;border-radius:8px;font-size:13px;color:var(--ink);margin-bottom:2px;}
+.nav-btn:hover{background:rgba(19,24,43,.06);}
+.nav-btn.active{background:var(--ink);color:#fff;font-weight:600;}
+.nav-btn .icon{font-size:15px;width:18px;text-align:center;}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px dashed var(--steel);}
+.user-row{display:flex;align-items:center;gap:8px;padding:6px;}
+.user-row .av{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.user-row .info{flex:1;min-width:0;}
+.user-row .info .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-row .info .rl{font-size:10px;color:#888;}
+.main-content{flex:1;overflow-y:auto;padding:22px 24px;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ── ALUNO BOTTOM NAV (mobile) ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--raised);border-top:1px solid var(--steel);padding:6px 0 env(safe-area-inset-bottom,6px);z-index:40;}
+.bottom-nav-inner{display:flex;justify-content:space-around;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.bottom-nav button{background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;color:#888;font-size:10px;flex-shrink:0;}
+.bottom-nav button.active{color:var(--red);}
+.bottom-nav button .ico{font-size:20px;line-height:1;}
+
+/* ── CARDS & UTILS ── */
+.row-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.row-head h2{font-size:20px;}
+.row-head .actions{display:flex;gap:8px;flex-wrap:wrap;}
+.card{background:var(--raised);border:1px solid var(--steel);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card.alert{border-left:4px solid var(--yellow);}
+.card.success{border-left:4px solid var(--green);}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--raised);border:1px solid var(--steel);border-radius:var(--radius);padding:14px;}
+.stat-card .num{font-family:'IBM Plex Mono';font-size:24px;font-weight:600;}
+.stat-card .lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-top:3px;}
+.badge{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:20px;font-weight:600;}
+.badge.pro{background:#E1F4EA;color:var(--green);}
+.badge.trial{background:#FFF1CF;color:#8A5A00;}
+.badge.inativo{background:#EFEDE6;color:#888;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--steel);}
+td{padding:8px;border-bottom:1px solid #ece9e1;vertical-align:middle;}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-right:8px;flex-shrink:0;}
+.switch-toggle{width:36px;height:20px;border-radius:20px;background:var(--steel);position:relative;border:none;cursor:pointer;flex-shrink:0;vertical-align:middle;transition:background .15s;}
+.switch-toggle.on{background:var(--green);}
+.switch-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;}
+.switch-toggle.on::after{left:18px;}
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.chip{border:1px solid var(--steel-d);border-radius:20px;padding:4px 12px;font-size:12px;background:var(--raised);cursor:pointer;border:none;}
+.chip.active{border:1px solid var(--ink);background:var(--ink);color:#fff;}
+.empty-state{color:#aaa;font-size:13px;padding:16px 0;text-align:center;}
+.tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.tag.custom{background:#E3EAFC;color:var(--blue);}
+.tag.system{background:#F0EEE8;color:#888;}
+.tag.draft{background:#FFE2D9;color:#9c2f12;}
+
+/* ── CALENDARIO ── */
+.cal-board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;}
+.cal-day{background:var(--raised);border:1px solid var(--steel);border-radius:10px;padding:8px 6px;min-height:90px;font-size:11px;}
+.cal-day .d{font-family:'IBM Plex Mono';font-size:10px;color:#888;margin-bottom:5px;}
+.cal-day.today{border-color:var(--red);}
+.cal-day.today .d{color:var(--red);}
+select.day-sel{width:100%;border:1px solid var(--steel);border-radius:5px;padding:4px 5px;font-size:11px;background:#fff;}
+.cal-pill{display:block;border-radius:6px;padding:5px 7px;font-size:11px;font-weight:600;margin-top:4px;}
+.cal-pill.A{background:#FFE2D9;color:var(--red);}
+.cal-pill.B{background:#E3EAFC;color:var(--blue);}
+.cal-pill.rest{border:1px dashed var(--steel-d);color:#aaa;background:transparent;}
+.cal-pill.done{outline:2px solid var(--green);}
+
+/* ── EXERCISE LIBRARY ── */
+.lib-group{margin-bottom:20px;}
+.lib-group-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#888;border-bottom:1px solid var(--steel);padding-bottom:6px;margin-bottom:10px;}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.lib-item{background:var(--raised);border:1px solid var(--steel);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color .15s;}
+.lib-item:hover,.lib-item.selected{border-color:var(--red);}
+.lib-item .name{font-size:12px;font-weight:600;margin-bottom:4px;}
+.lib-item .meta{display:flex;align-items:center;gap:6px;}
+.lib-item .video-ico{font-size:14px;color:var(--red);}
+
+/* ── CHAT ── */
+.chat-wrap{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--steel);border-radius:var(--radius);overflow:hidden;}
+.chat-list button{display:block;width:100%;text-align:left;background:transparent;border:none;padding:10px 12px;border-bottom:1px solid #ece9e1;font-size:13px;color:var(--ink);}
+.chat-list button.active{background:var(--paper);font-weight:600;}
+.chat-thread{padding:14px;min-height:220px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.bubble{max-width:72%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.4;}
+.bubble.from-personal{background:var(--ink);color:#fff;align-self:flex-end;}
+.bubble.from-aluno{background:var(--raised);border:1px solid var(--steel);align-self:flex-start;}
+.chat-input-row{display:flex;gap:8px;padding:10px;border-top:1px solid var(--steel);}
+.chat-input-row input{flex:1;border:1px solid var(--steel);border-radius:8px;padding:8px 10px;}
+
+/* ── EXERCISE ROW (aluno) ── */
+.ex-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #ece9e1;font-size:13px;}
+.ex-row .check-btn{width:20px;height:20px;border:2px solid var(--steel-d);border-radius:5px;background:transparent;flex-shrink:0;padding:0;}
+.ex-row .check-btn.done{background:var(--green);border-color:var(--green);}
+.ex-row .ex-name{flex:1;}
+.ex-row .ex-meta{font-family:'IBM Plex Mono';font-size:12px;color:#888;}
+.rpe-select{border:1px solid var(--steel);border-radius:6px;padding:4px 8px;font-size:12px;background:#fff;width:90px;}
+
+/* ── AI FAB ── */
+.ai-fab{position:fixed;bottom:80px;right:18px;background:var(--ink);color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(19,24,43,.28);z-index:50;}
+.ai-fab .pulse{width:7px;height:7px;border-radius:50%;background:var(--red);}
+.ai-panel-float{position:fixed;bottom:140px;right:18px;width:320px;max-width:92vw;background:var(--raised);border:1px solid var(--steel);border-radius:var(--radius);box-shadow:0 10px 28px rgba(19,24,43,.18);z-index:50;overflow:hidden;}
+.ai-panel-head{background:var(--ink);color:#fff;padding:10px 14px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+.ai-panel-head button{background:transparent;border:none;color:#fff;font-size:15px;}
+.ai-log{padding:10px 12px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.ai-input-row{display:flex;gap:6px;padding:10px;border-top:1px solid var(--steel);}
+.ai-input-row input{flex:1;border:1px solid var(--steel);border-radius:6px;padding:7px 10px;}
+.ai-input-row button{border:1px solid var(--steel-d);background:#fff;border-radius:6px;padding:7px 9px;}
+.ai-input-row button.mic-on{background:var(--red);border-color:var(--red);color:#fff;}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(19,24,43,.55);z-index:70;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--raised);border-radius:var(--radius);padding:22px;width:100%;max-width:460px;margin:auto;}
+.modal-box h3{font-size:17px;margin-bottom:14px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+.computed-box{background:#E1F4EA;border:1px solid #B7E2C9;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono';font-size:12px;color:var(--green);margin-top:6px;}
+
+/* ── TOAST ── */
+.toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:90;max-width:88vw;text-align:center;}
+
+/* ── PLANOS ── */
+.plan-card{background:var(--raised);border:1px solid var(--steel);border-radius:var(--radius);padding:16px;margin-bottom:10px;}
+.plan-card h3{font-size:15px;margin-bottom:4px;}
+.plan-card .price{font-family:'IBM Plex Mono';font-size:18px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.plan-card .desc{font-size:12px;color:#888;margin-bottom:12px;}
+.plan-card .pay-options{display:flex;flex-direction:column;gap:8px;}
+.pix-box{background:#F0F8F4;border:1px solid var(--green);border-radius:8px;padding:12px;}
+.pix-box .pix-key{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;margin:8px 0;}
+.video-embed{border-radius:8px;overflow:hidden;margin-top:8px;}
+.video-embed iframe{width:100%;height:200px;border:none;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:767px){
+  .app-layout{height:calc(100vh - 52px - 64px);}
+  .sidebar{display:none;}
+  .main-content{padding:14px 12px;}
+  .bottom-nav{display:block;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .cal-board{grid-template-columns:repeat(7,minmax(72px,1fr));overflow-x:auto;padding-bottom:4px;}
+  .chat-wrap{grid-template-columns:1fr;}
+  .chat-list{display:none;}
+  .lib-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+  .ai-fab{bottom:76px;}
+  .ai-panel-float{bottom:148px;right:10px;left:10px;width:auto;}
+  .field-row{grid-template-columns:1fr;}
+}
+@media(min-width:768px){
+  .topbar .mob-menu{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH ══════════════════════════════════════════════════ -->
+<div class="shell active" id="auth-shell">
+  <div class="auth-wrap" id="authWrap">
+    <!-- será preenchido por renderAuthScreen() -->
+  </div>
+</div>
+
+<!-- ══ APP (personal + aluno compartilham topbar) ══════════ -->
+<div class="shell" id="app-shell">
+  <div class="topbar" id="topbar">
+    <div class="brand"><span class="dot"></span><span class="name">VIGOR</span></div>
+    <div class="topbar-spacer"></div>
+    <div id="topbarActions"></div>
+  </div>
+  <div class="accent-bar"></div>
+
+  <!-- PERSONAL -->
+  <div id="personal-shell" style="display:none;">
+    <div class="app-layout">
+      <nav class="sidebar" id="personalSidebar">
+        <div class="role-tag">Personal</div>
+        <button class="nav-btn active" data-nav="dashboard"><span class="icon">📊</span>Visão geral</button>
+        <button class="nav-btn" data-nav="alunos"><span class="icon">👥</span>Alunos</button>
+        <button class="nav-btn" data-nav="treinos"><span class="icon">💪</span>Treinos</button>
+        <button class="nav-btn" data-nav="biblioteca"><span class="icon">📚</span>Biblioteca</button>
+        <button class="nav-btn" data-nav="avaliacoes"><span class="icon">📏</span>Avaliações</button>
+        <button class="nav-btn" data-nav="planos"><span class="icon">📋</span>Planos</button>
+        <button class="nav-btn" data-nav="ia"><span class="icon">🤖</span>Assistente IA</button>
+        <button class="nav-btn" data-nav="mensagens"><span class="icon">💬</span>Mensagens</button>
+        <button class="nav-btn" data-nav="perfil"><span class="icon">⚙️</span>Meu perfil</button>
+        <div class="sidebar-foot">
+          <div class="user-row" id="personalUserRow"></div>
+          <button class="btn ghost full" style="margin-top:8px;font-size:12px;" data-action="logout">Sair</button>
+        </div>
+      </nav>
+      <div class="main-content">
+        <div class="panel active" id="p-dashboard"></div>
+        <div class="panel" id="p-alunos"></div>
+        <div class="panel" id="p-treinos"></div>
+        <div class="panel" id="p-biblioteca"></div>
+        <div class="panel" id="p-avaliacoes"></div>
+        <div class="panel" id="p-planos"></div>
+        <div class="panel" id="p-ia"></div>
+        <div class="panel" id="p-mensagens"></div>
+        <div class="panel" id="p-perfil"></div>
+      </div>
+    </div>
+    <nav class="bottom-nav" id="personalBottomNav"><div class="bottom-nav-inner">
+      <button data-nav="dashboard" class="active"><span class="ico">📊</span>Geral</button>
+      <button data-nav="alunos"><span class="ico">👥</span>Alunos</button>
+      <button data-nav="treinos"><span class="ico">💪</span>Treinos</button>
+      <button data-nav="avaliacoes"><span class="ico">📏</span>Avaliações</button>
+      <button data-nav="planos"><span class="ico">📋</span>Planos</button>
+      <button data-nav="biblioteca"><span class="ico">📚</span>Biblioteca</button>
+      <button data-nav="ia"><span class="ico">🤖</span>IA</button>
+      <button data-nav="mensagens"><span class="ico">💬</span>Chat</button>
+      <button data-nav="perfil"><span class="ico">⚙️</span>Perfil</button>
+    </div></nav>
+  </div>
+
+  <!-- ALUNO -->
+  <div id="aluno-shell" style="display:none;">
+    <div class="app-layout">
+      <nav class="sidebar" id="alunoSidebar">
+        <div class="role-tag">Aluno</div>
+        <button class="nav-btn active" data-anav="hoje"><span class="icon">🏋️</span>Hoje</button>
+        <button class="nav-btn" data-anav="calendario"><span class="icon">📅</span>Semana</button>
+        <button class="nav-btn" data-anav="avaliacoes"><span class="icon">📈</span>Evolução</button>
+        <button class="nav-btn" data-anav="plano"><span class="icon">⭐</span>Plano</button>
+        <button class="nav-btn" data-anav="mensagens"><span class="icon">💬</span>Chat</button>
+        <div class="sidebar-foot">
+          <div class="user-row" id="alunoUserRow"></div>
+          <button class="btn ghost full" style="margin-top:8px;font-size:12px;" data-action="logout">Sair</button>
+        </div>
+      </nav>
+      <div class="main-content">
+        <div class="panel active" id="a-hoje"></div>
+        <div class="panel" id="a-calendario"></div>
+        <div class="panel" id="a-avaliacoes"></div>
+        <div class="panel" id="a-plano"></div>
+        <div class="panel" id="a-mensagens"></div>
+      </div>
+    </div>
+    <nav class="bottom-nav"><div class="bottom-nav-inner">
+      <button data-anav="hoje"><span class="ico">🏋️</span>Hoje</button>
+      <button data-anav="calendario"><span class="ico">📅</span>Semana</button>
+      <button data-anav="avaliacoes"><span class="ico">📈</span>Evolução</button>
+      <button data-anav="plano"><span class="ico">⭐</span>Plano</button>
+      <button data-anav="mensagens"><span class="ico">💬</span>Chat</button>
+    </div></nav>
+  </div>
+</div>
+
+<!-- ══ MODAIS, IA FAB, TOAST ════════════════════════════════ -->
+<div class="modal-bg" id="modalBg"><div class="modal-box" id="modalBox"></div></div>
+<button class="ai-fab" id="aiFab" data-action="toggle-ai"><span class="pulse"></span>🤖 Comandar IA</button>
+<div class="ai-panel-float" id="aiPanel" hidden>
+  <div class="ai-panel-head"><span>🤖 Assistente IA</span><button data-action="close-ai">✕</button></div>
+  <div class="ai-log" id="aiLog"><div class="empty-state" style="padding:10px 0;">Digite ou fale um comando, ex: "desative o acesso da Marina"</div></div>
+  <div class="ai-input-row">
+    <button id="micBtn" title="Falar">🎤</button>
+    <input id="aiInput" placeholder="Escreva um comando...">
+    <button class="btn small" data-action="send-ai">Enviar</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   VIGOR — Frontend v2 com auth real, mobile e todas as features
+   ══════════════════════════════════════════════════════════════ */
+
+// ── session ──────────────────────────────────────────────────
+var session = {
+  token: localStorage.getItem('vigor-token'),
+  user: null
+};
+function saveSession(token, user){
+  session.token = token; session.user = user;
+  localStorage.setItem('vigor-token', token);
+  localStorage.setItem('vigor-user', JSON.stringify(user));
+}
+function clearSession(){
+  session.token = null; session.user = null;
+  localStorage.removeItem('vigor-token');
+  localStorage.removeItem('vigor-user');
+}
+var storedUser = localStorage.getItem('vigor-user');
+if(storedUser){ try{ session.user = JSON.parse(storedUser); }catch(e){} }
+
+// ── API ───────────────────────────────────────────────────────
+async function api(method, path, body){
+  var opts = { method:method, headers:{} };
+  if(session.token) opts.headers['X-Vigor-Token'] = session.token;
+  if(body !== undefined){ opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
+  var res = await fetch(path, opts);
+  var data = null;
+  try{ data = await res.json(); }catch(e){}
+  if(!res.ok) throw new Error((data&&data.error)||('Erro '+res.status));
+  return data;
+}
+
+// ── state ─────────────────────────────────────────────────────
+var state = {
+  students:{}, weeklyPlan:{}, workoutDefs:{}, assessments:{}, messages:{},
+  aiSuggestions:{}, alerts:[], planCatalog:[], personalProfile:{}, exerciseLibrary:[]
+};
+var ui = {
+  currentPersonalPanel: 'dashboard',
+  currentAlunoPanel: 'hoje',
+  selectedStudentId: null,
+  viewAsTip: '',
+  expandedStudentId: null,
+  selectedTipo: {},
+  selectedProtocolo: {},
+  filterStatus: 'todos',
+  libFilter: 'todos',
+  libSelected: null,
+  addingExToWorkout: null // {studentId, workoutKey}
+};
+
+function studentList(){ return Object.values(state.students); }
+function dispStatus(s){ return s.active ? s.status : 'inativo'; }
+function esc(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function r1(n){ return Math.round(n*10)/10; }
+
+async function refreshState(){
+  try{
+    var data = await api('GET', '/api/state');
+    state = data;
+    var ids = Object.keys(state.students);
+    if(!ui.selectedStudentId && ids.length) ui.selectedStudentId = ids[0];
+    ids.forEach(function(id){
+      if(!ui.selectedTipo[id]) ui.selectedTipo[id] = 'Antropometria';
+      if(!ui.selectedProtocolo[id]) ui.selectedProtocolo[id] = '3dobras';
+    });
+    renderAll();
+  }catch(e){ showToast('Erro ao carregar dados: '+e.message); }
+}
+
+// ── toast / modal ─────────────────────────────────────────────
+function showToast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(function(){ t.style.display='none'; }, 3200);
+}
+function openModal(title, html, onSave){
+  var box = document.getElementById('modalBox');
+  box.innerHTML = '<h3>'+esc(title)+'</h3>'+html+
+    '<div class="modal-actions">'+
+    '<button class="btn ghost small" data-ma="cancel">Cancelar</button>'+
+    '<button class="btn small" data-ma="save">Salvar</button></div>';
+  document.getElementById('modalBg').classList.add('open');
+  window._modalSave = onSave;
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); window._modalSave=null; }
+async function runAction(fn, msg){
+  try{ var r=await fn(); if(msg) showToast(msg); await refreshState(); return r; }
+  catch(e){ showToast('Erro: '+e.message); }
+}
+
+// ── routing ───────────────────────────────────────────────────
+function showAuth(){ document.getElementById('auth-shell').classList.add('active'); document.getElementById('app-shell').classList.remove('active'); }
+function showApp(){
+  document.getElementById('auth-shell').classList.remove('active');
+  document.getElementById('app-shell').classList.add('active');
+  if(session.user && session.user.role==='personal'){
+    document.getElementById('personal-shell').style.display='';
+    document.getElementById('aluno-shell').style.display='none';
+    document.getElementById('aiFab').style.display='flex';
+    renderTopbarPersonal();
+  } else {
+    document.getElementById('personal-shell').style.display='none';
+    document.getElementById('aluno-shell').style.display='';
+    document.getElementById('aiFab').style.display='none';
+    renderTopbarAluno();
+  }
+}
+function goPersonalPanel(name){
+  ui.currentPersonalPanel = name;
+  document.querySelectorAll('#personal-shell [data-nav]').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('#personal-shell [data-nav="'+name+'"]').forEach(function(b){ b.classList.add('active'); });
+  document.querySelectorAll('#personal-shell .panel').forEach(function(p){ p.classList.remove('active'); });
+  var panel = document.getElementById('p-'+name);
+  if(panel) panel.classList.add('active');
+  renderPersonalPanel(name);
+}
+function goAlunoPanel(name){
+  ui.currentAlunoPanel = name;
+  document.querySelectorAll('#aluno-shell [data-anav]').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('#aluno-shell [data-anav="'+name+'"]').forEach(function(b){ b.classList.add('active'); });
+  document.querySelectorAll('#aluno-shell .panel').forEach(function(p){ p.classList.remove('active'); });
+  var panel = document.getElementById('a-'+name);
+  if(panel) panel.classList.add('active');
+  renderAlunoPanel(name);
+}
+function renderAll(){
+  if(session.user && session.user.role==='personal'){
+    renderPersonalPanel(ui.currentPersonalPanel);
+    renderTopbarPersonal();
+  } else if(session.user && session.user.role==='aluno'){
+    renderAlunoPanel(ui.currentAlunoPanel);
+    renderTopbarAluno();
+  }
+}
+function renderTopbarPersonal(){
+  var u = session.user||{};
+  document.getElementById('topbarActions').innerHTML =
+    '<span style="color:#aaa;font-size:12px;margin-right:8px;">'+esc(u.name||'Personal')+'</span>'+
+    '<button class="avatar-btn" title="Sair" data-action="logout">'+(u.name||'P').charAt(0).toUpperCase()+'</button>';
+}
+function renderTopbarAluno(){
+  var u = session.user||{};
+  document.getElementById('topbarActions').innerHTML =
+    '<span style="color:#aaa;font-size:12px;margin-right:8px;">'+esc(u.name||'Aluno')+'</span>'+
+    '<button class="avatar-btn" title="Sair" data-action="logout">'+(u.name||'A').charAt(0).toUpperCase()+'</button>';
+}
+
+// ── AUTH SCREENS ──────────────────────────────────────────────
+var authScreen = 'login';
+function renderAuthScreen(){
+  var w = document.getElementById('authWrap');
+  if(authScreen==='login') w.innerHTML = authLoginHtml();
+  else if(authScreen==='register-personal') w.innerHTML = authRegPersonalHtml();
+  else if(authScreen==='register-student') w.innerHTML = authRegStudentHtml();
+  else if(authScreen==='forgot') w.innerHTML = authForgotHtml();
+  else if(authScreen==='reset') w.innerHTML = authResetHtml();
+}
+function brandHtml(){ return '<div class="brand"><span class="dot"></span><span class="name">VIGOR</span></div>'; }
+function authLoginHtml(){
+  return '<div class="auth-card">'+brandHtml()+
+    '<h1>Entrar</h1><div class="sub">Coaching à distância, sem perder o ritmo.</div>'+
+    '<div class="field"><label>E-mail</label><input id="loginEmail" type="email" placeholder="seu@email.com" autocomplete="email"></div>'+
+    '<div class="field"><label>Senha</label><input id="loginPw" type="password" placeholder="••••••••" autocomplete="current-password"></div>'+
+    '<button class="btn full" id="loginBtn">Entrar</button>'+
+    '<div class="auth-links"><a href="#" data-auth="forgot">Esqueci minha senha</a></div>'+
+    '<div class="divider">ou</div>'+
+    '<button class="btn ghost full" data-action="google-demo">Entrar com Google (demo)</button>'+
+    '<div class="auth-links" style="margin-top:18px;">Não tem conta?<br>'+
+    '<a href="#" data-auth="register-student">Sou aluno — criar conta</a><br>'+
+    '<a href="#" data-auth="register-personal">Sou personal trainer — criar conta</a></div></div>';
+}
+function authRegPersonalHtml(){
+  return '<div class="auth-card">'+brandHtml()+
+    '<h1>Conta Personal</h1><div class="sub">Crie sua conta profissional para gerenciar alunos.</div>'+
+    '<div class="field"><label>Nome completo</label><input id="rpName" placeholder="Seu nome"></div>'+
+    '<div class="field"><label>Nome do seu negócio (opcional)</label><input id="rpBiz" placeholder="Ex: Reis Personal Training"></div>'+
+    '<div class="field"><label>E-mail</label><input id="rpEmail" type="email" placeholder="seu@email.com"></div>'+
+    '<div class="field"><label>WhatsApp (com DDD)</label><input id="rpWa" placeholder="5511999990000"></div>'+
+    '<div class="field"><label>Senha</label><input id="rpPw" type="password" placeholder="Mínimo 6 caracteres"></div>'+
+    '<button class="btn full" id="rpBtn">Criar conta</button>'+
+    '<div class="auth-links"><a href="#" data-auth="login">Já tenho conta — entrar</a></div></div>';
+}
+function authRegStudentHtml(){
+  return '<div class="auth-card">'+brandHtml()+
+    '<h1>Criar conta de aluno</h1><div class="sub">Preencha seus dados. Seu personal trainer irá confirmar o acesso.</div>'+
+    '<div class="field"><label>Nome completo</label><input id="rsName" placeholder="Seu nome completo"></div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label>Data de nascimento</label><input id="rsBirth" type="date"></div>'+
+      '<div class="field"><label>CPF</label><input id="rsCpf" placeholder="000.000.000-00"></div>'+
+    '</div>'+
+    '<div class="field"><label>E-mail</label><input id="rsEmail" type="email" placeholder="seu@email.com"></div>'+
+    '<div class="field"><label>WhatsApp (com DDD)</label><input id="rsWa" placeholder="5511988880000"></div>'+
+    '<div class="field"><label>Senha</label><input id="rsPw" type="password" placeholder="Mínimo 6 caracteres"></div>'+
+    '<button class="btn full" id="rsBtn">Criar conta</button>'+
+    '<div class="auth-links"><a href="#" data-auth="login">Já tenho conta — entrar</a></div></div>';
+}
+function authForgotHtml(){
+  return '<div class="auth-card">'+brandHtml()+
+    '<h1>Recuperar senha</h1><div class="sub">Informe seu e-mail. Se cadastrado, um link de redefinição será gerado — peça ao seu personal para te enviar.</div>'+
+    '<div class="field"><label>E-mail</label><input id="fpEmail" type="email" placeholder="seu@email.com"></div>'+
+    '<button class="btn full" id="fpBtn">Gerar link</button>'+
+    '<div id="fpResult" style="margin-top:12px;font-size:12px;color:var(--green);"></div>'+
+    '<div class="auth-links"><a href="#" data-auth="login">Voltar ao login</a></div></div>';
+}
+function authResetHtml(){
+  var token = new URLSearchParams(window.location.search).get('token')||'';
+  return '<div class="auth-card">'+brandHtml()+
+    '<h1>Nova senha</h1>'+
+    '<input type="hidden" id="resetToken" value="'+esc(token)+'">'+
+    '<div class="field"><label>Nova senha</label><input id="newPw" type="password" placeholder="Mínimo 6 caracteres"></div>'+
+    '<button class="btn full" id="resetBtn">Salvar nova senha</button></div>';
+}
+
+// ── AUTH ACTIONS ──────────────────────────────────────────────
+async function doLogin(){
+  var email = (document.getElementById('loginEmail')||{}).value||'';
+  var pw = (document.getElementById('loginPw')||{}).value||'';
+  if(!email||!pw){ showToast('Preencha e-mail e senha.'); return; }
+  try{
+    var r = await api('POST','/api/auth/login',{email,password:pw});
+    saveSession(r.token, r.user);
+    await refreshState();
+    showApp();
+  }catch(e){ showToast(e.message); }
+}
+async function doRegisterPersonal(){
+  var name=(document.getElementById('rpName')||{}).value||'';
+  var biz=(document.getElementById('rpBiz')||{}).value||'';
+  var email=(document.getElementById('rpEmail')||{}).value||'';
+  var wa=(document.getElementById('rpWa')||{}).value||'';
+  var pw=(document.getElementById('rpPw')||{}).value||'';
+  if(!name||!email||!pw){ showToast('Preencha todos os campos obrigatórios.'); return; }
+  try{
+    var r = await api('POST','/api/auth/register-personal',{name,businessName:biz,email,whatsapp:wa,password:pw});
+    saveSession(r.token, r.user);
+    await refreshState();
+    showApp();
+  }catch(e){ showToast(e.message); }
+}
+async function doRegisterStudent(){
+  var name=(document.getElementById('rsName')||{}).value||'';
+  var birth=(document.getElementById('rsBirth')||{}).value||'';
+  var cpf=(document.getElementById('rsCpf')||{}).value||'';
+  var email=(document.getElementById('rsEmail')||{}).value||'';
+  var wa=(document.getElementById('rsWa')||{}).value||'';
+  var pw=(document.getElementById('rsPw')||{}).value||'';
+  if(!name||!email||!wa||!pw||!birth){ showToast('Preencha todos os campos obrigatórios.'); return; }
+  try{
+    var r = await api('POST','/api/auth/register-student',{name,email,whatsapp:wa,cpf,birthdate:birth,password:pw});
+    saveSession(r.token, r.user);
+    showToast('Conta criada! Aguarde a ativação pelo seu personal trainer.');
+    await refreshState();
+    showApp();
+  }catch(e){ showToast(e.message); }
+}
+async function doForgot(){
+  var email=(document.getElementById('fpEmail')||{}).value||'';
+  if(!email){ showToast('Informe o e-mail.'); return; }
+  try{
+    var r = await api('POST','/api/auth/forgot-password',{email});
+    var el = document.getElementById('fpResult');
+    if(el) el.innerHTML = '✅ Link gerado: <a href="'+esc(r.resetUrl)+'">'+esc(r.resetUrl)+'</a><br>Copie e envie para o aluno, ou o personal pode clicar no link acima.';
+  }catch(e){ showToast(e.message); }
+}
+async function doReset(){
+  var token=(document.getElementById('resetToken')||{}).value||'';
+  var pw=(document.getElementById('newPw')||{}).value||'';
+  if(!pw||pw.length<6){ showToast('Senha deve ter ao menos 6 caracteres.'); return; }
+  try{
+    await api('POST','/api/auth/reset-password',{token,password:pw});
+    showToast('Senha redefinida! Faça login.');
+    authScreen='login'; renderAuthScreen();
+  }catch(e){ showToast(e.message); }
+}
+async function doLogout(){
+  try{ await api('POST','/api/auth/logout'); }catch(e){}
+  clearSession();
+  showAuth();
+  authScreen='login'; renderAuthScreen();
+}
+
+// ── RENDER: PERSONAL PANELS ───────────────────────────────────
+function renderPersonalPanel(name){
+  var fns={dashboard:renderDashboard,alunos:renderAlunos,treinos:renderTreinos,
+    biblioteca:renderBiblioteca,avaliacoes:renderAvaliacoes,
+    planos:renderPlanosPersonal,ia:renderIA,mensagens:renderMensagens,perfil:renderPerfil};
+  if(fns[name]) fns[name]();
+}
+
+function renderDashboard(){
+  var list=studentList(), ativos=list.filter(s=>dispStatus(s)!=='inativo');
+  var media=ativos.length?Math.round(ativos.reduce((a,s)=>a+s.adherence,0)/ativos.length):0;
+  var h='<div class="row-head"><h2>Visão geral</h2><span class="mono" style="font-size:12px;color:#aaa;">'+new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})+'</span></div>';
+  h+='<div class="stat-grid">'+
+    stat(ativos.length,'Alunos ativos')+stat(media+'%','Adesão média')+
+    stat(state.alerts.filter(a=>a.type==='avaliacao_vencendo').length,'Aval. pendentes')+
+    stat('R$ —','A receber')+'</div>';
+  h+='<h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#888;margin-bottom:8px;">Alertas</h3>';
+  if(!state.alerts.length) h+='<div class="empty-state">Nenhum alerta no momento.</div>';
+  state.alerts.forEach(a=>{
+    h+='<div class="card alert" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">'+
+      '<span>'+esc(a.text)+'</span>'+
+      '<button class="btn small ghost" data-action="dismiss-alert" data-aid="'+a.id+'">Dispensar</button></div>';
+  });
+  set('p-dashboard',h);
+}
+function stat(num,lbl){ return '<div class="stat-card"><div class="num">'+num+'</div><div class="lbl">'+lbl+'</div></div>'; }
+
+function renderAlunos(){
+  var h='<div class="row-head"><h2>Alunos</h2><div class="actions"><button class="btn" data-action="novo-aluno">+ Novo aluno</button></div></div>';
+  h+='<div class="chip-group">';
+  ['todos','trial','pro','inativo'].forEach(f=>{
+    h+='<button class="chip'+(ui.filterStatus===f?' active':'')+'" data-filter="'+f+'">'+f.charAt(0).toUpperCase()+f.slice(1)+'</button>';
+  });
+  h+='</div><table><tr><th>Aluno</th><th>Status</th><th>Plano</th><th>Adesão</th><th>Acesso</th><th></th></tr>';
+  studentList().forEach(s=>{
+    var ds=dispStatus(s);
+    if(ui.filterStatus!=='todos'&&ds!==ui.filterStatus) return;
+    h+='<tr data-sid="'+s.id+'"><td><span class="avatar">'+s.initials+'</span>'+esc(s.name)+'</td>'+
+      '<td><span class="badge '+ds+'">'+ds.charAt(0).toUpperCase()+ds.slice(1)+'</span></td>'+
+      '<td>'+(s.plan?esc(s.plan.name):'—')+'</td><td class="mono">'+s.adherence+'%</td>'+
+      '<td><button class="switch-toggle'+(s.active?' on':'')+'" data-action="toggle-access" data-sid="'+s.id+'"></button></td>'+
+      '<td style="display:flex;gap:4px;"><button class="btn small outline" data-action="ver-perfil" data-sid="'+s.id+'">Perfil</button>'+
+      '<button class="btn small" data-action="atribuir-plano" data-sid="'+s.id+'">Plano</button>'+
+      '<button class="btn small ghost" data-action="enviar-acesso" data-sid="'+s.id+'">📲</button></td></tr>';
+    if(ui.expandedStudentId===s.id){
+      h+='<tr><td colspan="6"><div class="card" style="margin:6px 0;">'+
+        '<b>'+esc(s.name)+'</b> · '+esc(s.email)+' · WhatsApp: '+esc(s.whatsapp||'—')+'<br>'+
+        'CPF: '+esc(s.cpf||'—')+' · Nascimento: '+esc(s.birthdate||'—')+'<br>'+
+        'Objetivo: '+esc(s.objetivo||'—')+' · Restrição: '+esc(s.restricao||'—')+'<br>'+
+        (s.plan?'Plano: <b>'+esc(s.plan.name)+'</b> · '+esc(s.plan.price)+' · até '+esc(s.plan.validity):'<b>Sem plano (Trial)</b>')+'</div></td></tr>';
+    }
+  });
+  h+='</table>';
+  set('p-alunos',h);
+}
+
+// ── treinos ──────────────────────────────────────────────────
+var DAYS=[{k:'seg',l:'SEG'},{k:'ter',l:'TER'},{k:'qua',l:'QUA'},{k:'qui',l:'QUI'},{k:'sex',l:'SEX'},{k:'sab',l:'SAB'},{k:'dom',l:'DOM'}];
+var TODAY_KEY='sex';
+function renderTreinos(){
+  var sid=ui.selectedStudentId;
+  var h='<div class="row-head"><h2>Treinos</h2><div class="actions">'+studentSel(sid,'selStudTreinos')+'<button class="btn" data-action="novo-treino">+ Novo treino</button></div></div>';
+  if(!sid){ set('p-treinos',h+'<div class="empty-state">Sem alunos.</div>'); return; }
+  var s=state.students[sid], plan=state.weeklyPlan[sid]||{}, defs=state.workoutDefs[sid]||{};
+  var keys=Object.keys(defs);
+  h+='<div class="cal-board">';
+  DAYS.forEach(d=>{
+    var assigned=plan[d.k]||'rest', isToday=d.k===TODAY_KEY;
+    h+='<div class="cal-day'+(isToday?' today':'')+'"><div class="d">'+d.l+(isToday?' •':'')+'</div>'+
+      '<select class="day-sel" data-day="'+d.k+'" data-sid="'+sid+'">'+
+      '<option value="rest"'+(assigned==='rest'?' selected':'')+'>Descanso</option>'+
+      keys.map(k=>'<option value="'+k+'"'+(assigned===k?' selected':'')+'>'+esc(defs[k].name.split(' — ')[0]||k)+'</option>').join('')+
+      '</select>'+(isToday&&s.completedToday?'<span style="color:var(--green);font-size:10px;margin-top:3px;display:block;">✓ Concluído</span>':'')+'</div>';
+  });
+  h+='</div>';
+  // detalhe do treino de hoje
+  var todayKey=plan[TODAY_KEY]||'rest';
+  h+='<div style="margin-top:16px;">';
+  if(todayKey==='rest'||!defs[todayKey]){
+    h+='<div class="card"><span class="empty-state">Hoje é descanso para '+esc(s.name)+'.</span></div>';
+  } else {
+    var def=defs[todayKey];
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'+
+      '<b>'+esc(def.name)+'</b>'+
+      '<div style="display:flex;gap:6px;">'+
+      '<button class="btn small" data-action="add-exercise" data-sid="'+sid+'" data-wk="'+todayKey+'">+ Exercício</button>'+
+      '<button class="btn small danger" data-action="del-treino" data-sid="'+sid+'" data-wk="'+todayKey+'">Excluir treino</button></div></div>'+
+      '<table><tr><th>Exercício</th><th>Séries</th><th>Reps</th><th>Carga</th><th>Obs</th><th></th></tr>';
+    def.exercises.forEach(ex=>{
+      h+='<tr><td>'+esc(ex.name)+(ex.done?'<span class="mono" style="color:var(--green);font-size:11px;margin-left:6px;">✓</span>':'')+
+        (ex.tip?'<div style="font-size:11px;color:#888;">💡 '+esc(ex.tip)+'</div>':'')+'</td>'+
+        '<td class="mono">'+ex.series+'</td><td class="mono">'+ex.reps+'</td><td class="mono">'+esc(ex.carga)+'</td>'+
+        '<td><span style="font-size:11px;color:#888;">'+esc(ex.notes||'')+'</span></td>'+
+        '<td style="display:flex;gap:4px;">'+
+        '<button class="btn small outline" data-action="edit-exercise" data-eid="'+ex.id+'">Editar</button>'+
+        '<button class="btn small danger" data-action="del-exercise" data-eid="'+ex.id+'">✕</button></td></tr>';
+    });
+    h+='</table></div>';
+  }
+  h+='</div>';
+  set('p-treinos',h);
+}
+
+// ── biblioteca ───────────────────────────────────────────────
+function renderBiblioteca(){
+  var pid=session.user&&session.user.id;
+  var h='<div class="row-head"><h2>Biblioteca de Exercícios</h2><button class="btn" data-action="novo-exercicio-lib">+ Novo exercício</button></div>';
+  h+='<div class="chip-group"><button class="chip'+(ui.libFilter==='todos'?' active':'')+'" data-libf="todos">Todos</button>';
+  ['Peito','Costas','Ombros','Bíceps','Tríceps','Pernas','Glúteos','Abdômen','Cardio'].forEach(g=>{
+    h+='<button class="chip'+(ui.libFilter===g?' active':'')+'" data-libf="'+g+'">'+g+'</button>';
+  });
+  h+='</div>';
+  var grouped={};
+  state.exerciseLibrary.forEach(function(ex){
+    if(ui.libFilter!=='todos'&&ex.muscle_group!==ui.libFilter) return;
+    if(!grouped[ex.muscle_group]) grouped[ex.muscle_group]=[];
+    grouped[ex.muscle_group].push(ex);
+  });
+  Object.keys(grouped).sort().forEach(function(mg){
+    h+='<div class="lib-group"><div class="lib-group-title">'+esc(mg)+'</div><div class="lib-grid">';
+    grouped[mg].forEach(function(ex){
+      var isCustom=!!ex.is_custom;
+      h+='<div class="lib-item"><div class="name">'+esc(ex.name)+'</div>'+
+        '<div class="meta">'+
+        (ex.video_url?'<span class="video-ico" title="Tem vídeo">▶</span>':'')+
+        '<span class="tag '+(isCustom?'custom':'system')+'">'+(isCustom?'Personalizado':'Sistema')+'</span>'+
+        (isCustom?'<button class="btn small danger" style="margin-left:auto;" data-action="del-exercicio-lib" data-lid="'+ex.id+'">✕</button>':'')+
+        '</div>'+
+        (ex.video_url?'<div style="margin-top:6px;"><a href="'+esc(ex.video_url)+'" target="_blank" class="btn small ghost" style="font-size:11px;">▶ Ver vídeo</a></div>':'')+
+        (ex.notes?'<div style="font-size:11px;color:#888;margin-top:4px;">'+esc(ex.notes)+'</div>':'')+
+        '</div>';
+    });
+    h+='</div></div>';
+  });
+  if(!Object.keys(grouped).length) h+='<div class="empty-state">Nenhum exercício encontrado.</div>';
+  set('p-biblioteca',h);
+}
+
+// ── avaliações ───────────────────────────────────────────────
+var TIPOS=['Antropometria','Adipometria','Perimetria','Bioimpedância','Autoavaliação'];
+function renderAvaliacoes(){
+  var sid=ui.selectedStudentId;
+  var h='<div class="row-head"><h2>Avaliações</h2><div class="actions">'+studentSel(sid,'selStudAval')+
+    '<button class="btn" data-action="nova-avaliacao">+ Nova avaliação</button></div></div>';
+  if(!sid){ set('p-avaliacoes',h+'<div class="empty-state">Sem alunos.</div>'); return; }
+  var tipo=ui.selectedTipo[sid]||'Antropometria';
+  var proto=ui.selectedProtocolo[sid]||'3dobras';
+  h+='<div class="chip-group">';
+  TIPOS.forEach(t=>{ h+='<button class="chip'+(t===tipo?' active':'')+'" data-tipo="'+t+'">'+t+'</button>'; });
+  h+='</div>';
+  if(tipo==='Adipometria'){
+    h+='<div class="chip-group" style="margin-top:-4px;">';
+    ['3dobras','5dobras','7dobras'].forEach(p=>{ h+='<button class="chip'+(p===proto?' active':'')+' small" data-proto="'+p+'">'+p+'</button>'; });
+    h+='</div>';
+  }
+  var all=(state.assessments[sid]||[]).filter(a=>a.tipo===tipo&&(tipo!=='Adipometria'||!a.protocolo||a.protocolo===proto));
+  h+=comparisonHtml(all,tipo);
+  h+='<h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#888;margin:16px 0 8px;">Histórico ('+all.length+')</h3>';
+  all.slice().reverse().forEach(a=>{
+    h+='<div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">'+
+      '<span class="mono">'+esc(a.date)+'</span><span style="font-size:12px;">'+summaryLine(a)+'</span>'+
+      '<span style="display:flex;gap:4px;">'+
+      '<button class="btn small outline" data-action="editar-avaliacao" data-sid="'+sid+'" data-aid="'+a.id+'">Editar</button>'+
+      '<button class="btn small danger" data-action="excluir-avaliacao" data-sid="'+sid+'" data-aid="'+a.id+'">Excluir</button></span></div>';
+  });
+  set('p-avaliacoes',h);
+}
+function comparisonHtml(all,tipo){
+  if(!all.length) return '<div class="empty-state">Nenhuma avaliação deste tipo ainda.</div>';
+  var defs=compareDefs[tipo]||[];
+  if(all.length===1){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><div class="card">'+
+      '<div class="mono" style="font-size:12px;color:#888;margin-bottom:8px;">'+esc(all[0].date)+'</div>'+
+      defs.map(d=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ece9e1;font-size:13px;"><span>'+d.label+'</span><span class="mono">'+gp(all[0],d.path)+d.unit+'</span></div>').join('')+
+      '</div><div class="card"><div class="empty-state">Adicione outra avaliação para comparar.</div></div></div>';
+  }
+  var prev=all[all.length-2],curr=all[all.length-1];
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+
+    '<div class="card"><div class="mono" style="font-size:12px;color:#888;margin-bottom:8px;">'+esc(prev.date)+'</div>'+
+    defs.map(d=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ece9e1;font-size:13px;"><span>'+d.label+'</span><span class="mono">'+gp(prev,d.path)+d.unit+'</span></div>').join('')+
+    '</div><div class="card"><div class="mono" style="font-size:12px;color:#888;margin-bottom:8px;">'+esc(curr.date)+'</div>'+
+    defs.map(d=>{
+      var pv=gp(prev,d.path),cv=gp(curr,d.path),diff=parseFloat(cv)-parseFloat(pv);
+      var cls='neutral',arrow='';
+      if(d.lb!==null&&diff!==0){ cls=(d.lb?diff<0:diff>0)?'good':'bad'; }
+      if(diff>0)arrow=' ▲';else if(diff<0)arrow=' ▼';
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ece9e1;font-size:13px;"><span>'+d.label+'</span><span class="mono" style="color:var(--'+(cls==='good'?'green':cls==='bad'?'red':'ink')+')">'+cv+d.unit+arrow+'</span></div>';
+    }).join('')+'</div></div>';
+}
+var compareDefs={
+  'Antropometria':[{path:'fields.peso',label:'Peso',unit:' kg',lb:null},{path:'computed.imc',label:'IMC',unit:'',lb:null}],
+  'Adipometria':[{path:'fields.peso',label:'Peso',unit:' kg',lb:null},{path:'computed.bf',label:'% Gordura',unit:'%',lb:true}],
+  'Perimetria':[{path:'fields.cintura',label:'Cintura',unit:' cm',lb:true},{path:'fields.quadril',label:'Quadril',unit:' cm',lb:null},{path:'computed.rcq',label:'RCQ',unit:'',lb:true}],
+  'Bioimpedância':[{path:'fields.peso',label:'Peso',unit:' kg',lb:null},{path:'computed.bf',label:'% Gordura',unit:'%',lb:true}],
+  'Autoavaliação':[{path:'fields.peso',label:'Peso',unit:' kg',lb:null},{path:'fields.cintura',label:'Cintura',unit:' cm',lb:true},{path:'fields.bem',label:'Bem-estar',unit:'/10',lb:false}]
+};
+function gp(obj,path){ return path.split('.').reduce((o,k)=>o&&o[k]!==undefined?o[k]:0,obj); }
+function summaryLine(a){
+  return (compareDefs[a.tipo]||[]).map(d=>d.label+' '+gp(a,d.path)+d.unit).join(' · ');
+}
+
+// ── planos (catálogo do personal) ────────────────────────────
+function renderPlanosPersonal(){
+  var h='<div class="row-head"><h2>Planos comerciais</h2><button class="btn" data-action="novo-plano-cat">+ Novo plano</button></div>';
+  if(!state.planCatalog.length) h+='<div class="empty-state">Nenhum plano cadastrado ainda.</div>';
+  state.planCatalog.forEach(p=>{
+    h+='<div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'+
+      '<div><b>'+esc(p.name)+'</b><br><span class="mono" style="font-size:15px;">'+esc(p.price)+'</span> · '+esc(p.duration_days)+'dias<br><span style="font-size:12px;color:#888;">'+esc(p.description||'')+'</span></div>'+
+      '<div style="display:flex;gap:6px;">'+
+      '<button class="btn small outline" data-action="edit-plano-cat" data-pid="'+p.id+'">Editar</button>'+
+      '<button class="btn small danger" data-action="del-plano-cat" data-pid="'+p.id+'">Excluir</button></div></div>';
+  });
+  var pp=state.personalProfile||{};
+  h+='<div class="row-head" style="margin-top:24px;"><h2>Configurações de pagamento</h2></div>'+
+    '<div class="card">'+
+    '<div class="field"><label>Chave PIX</label><input id="cfgPix" value="'+esc(pp.pix_key||'')+'" placeholder="CPF, e-mail, celular ou chave aleatória"></div>'+
+    '<div class="field"><label>Link de pagamento Mercado Pago (assinatura ou link único)</label><input id="cfgMp" value="'+esc(pp.mercadopago_link||'')+'" placeholder="https://mpago.la/..."></div>'+
+    '<div class="field"><label>WhatsApp para receber comprovantes</label><input id="cfgWa" value="'+esc(pp.whatsapp||'')+'" placeholder="5511999990000"></div>'+
+    '<button class="btn" data-action="save-payment-cfg">Salvar configurações</button></div>';
+  set('p-planos',h);
+}
+
+// ── IA ───────────────────────────────────────────────────────
+function renderIA(){
+  var h='<div class="row-head"><h2>Assistente IA</h2></div>'+
+    '<p style="font-size:13px;color:#666;margin-bottom:16px;">Use o botão flutuante 🤖 para comandar a IA por texto ou voz. Sugestões de carga são baseadas no RPE registrado pelo aluno e na fórmula 10RM (80% de 1RM).</p>';
+  var any=false;
+  studentList().forEach(s=>{
+    (state.aiSuggestions[s.id]||[]).forEach(sg=>{
+      any=true;
+      h+='<div class="card"><span class="tag draft">Rascunho</span><br><b style="margin-top:6px;display:block;">'+esc(s.name)+'</b>'+esc(sg.text)+
+        '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">'+
+        (sg.exercise_id&&sg.suggested_load?
+          '<button class="btn small" data-action="apply-load" data-eid="'+sg.exercise_id+'" data-sugid="'+sg.id+'" data-load="'+sg.suggested_load+'kg">✓ Aplicar carga sugerida</button>':'')+ 
+        '<button class="btn small ghost" data-action="ia-checkin" data-sid="'+s.id+'" data-sugid="'+sg.id+'">Enviar mensagem ao aluno</button>'+
+        '<button class="btn small outline" data-action="ia-descartar" data-sid="'+s.id+'" data-sugid="'+sg.id+'">Descartar</button></div></div>';
+    });
+  });
+  if(!any) h+='<div class="empty-state">Nenhuma sugestão pendente.<br>Quando o aluno registrar o RPE nos exercícios, sugestões de ajuste de carga aparecerão aqui.</div>';
+  studentList().forEach(s=>{
+    h+='<button class="btn ghost small" style="margin-right:6px;margin-top:6px;" data-action="gen-suggestions" data-sid="'+s.id+'">🔄 Analisar RPE de '+esc(s.name.split(' ')[0])+'</button>';
+  });
+  set('p-ia',h);
+}
+
+function renderMensagens(){
+  var sid=ui.selectedStudentId;
+  if(!sid||!studentList().length){ set('p-mensagens','<div class="empty-state">Sem alunos.</div>'); return; }
+  var h='<div class="row-head"><h2>Mensagens</h2></div>'+
+    '<div class="chat-wrap"><div class="chat-list">';
+  studentList().forEach(s=>{
+    h+='<button class="'+(s.id===sid?'active':'')+'" data-action="select-chat" data-sid="'+s.id+'">'+esc(s.name)+'</button>';
+  });
+  h+='</div><div><div class="chat-thread" id="chatPersonal">'+chatBubbles(sid)+'</div>'+
+    '<div class="chat-input-row"><input id="chatPInput" placeholder="Escrever mensagem..."><button class="btn small" data-action="send-msg-personal">Enviar</button></div>'+
+    '</div></div>';
+  set('p-mensagens',h);
+}
+
+function renderPerfil(){
+  var pp=state.personalProfile||{}, u=session.user||{};
+  var h='<div class="row-head"><h2>Meu perfil</h2></div>'+
+    '<div class="card">'+
+    '<div class="field"><label>Nome do negócio</label><input id="pfBiz" value="'+esc(pp.business_name||u.name||'')+'" placeholder="Seu nome ou nome do estúdio"></div>'+
+    '<div class="field"><label>WhatsApp de contato (com DDD)</label><input id="pfWa" value="'+esc(pp.whatsapp||'')+'" placeholder="5511999990000"></div>'+
+    '<div class="field"><label>Chave PIX</label><input id="pfPix" value="'+esc(pp.pix_key||'')+'" placeholder="CPF, e-mail, celular ou chave aleatória"></div>'+
+    '<div class="field"><label>Link Mercado Pago</label><input id="pfMp" value="'+esc(pp.mercadopago_link||'')+'" placeholder="https://mpago.la/..."></div>'+
+    '<button class="btn" data-action="save-perfil">Salvar perfil</button></div>';
+  set('p-perfil',h);
+}
+
+// ── RENDER: ALUNO PANELS ──────────────────────────────────────
+function renderAlunoPanel(name){
+  var fns={hoje:renderAlunoHoje,calendario:renderAlunoCalendario,
+    avaliacoes:renderAlunoAvaliacoes,plano:renderAlunoPlano,mensagens:renderAlunoMensagens};
+  if(fns[name]) fns[name]();
+}
+function myStudent(){
+  var u=session.user;
+  if(!u) return null;
+  return state.students[u.id]||null;
+}
+function renderAlunoHoje(){
+  var s=myStudent();
+  if(!s){ set('a-hoje','<div class="empty-state">Carregando...</div>'); return; }
+  if(!s.active){
+    set('a-hoje','<div class="card" style="text-align:center;padding:40px 20px;border-left:4px solid var(--red);">'+
+      '<h2 style="color:var(--red);">Acesso suspenso</h2>'+
+      '<p style="margin-top:10px;color:#666;">Seu personal desativou temporariamente o acesso. Entre em contato para reativar.</p></div>');
+    return;
+  }
+  var plan=state.weeklyPlan[s.id]||{}, defs=state.workoutDefs[s.id]||{};
+  var todayKey=plan[TODAY_KEY]||'rest', def=defs[todayKey];
+  var h='<div class="row-head"><h2>Bom treino, '+esc(s.name.split(' ')[0])+'!</h2>'+
+    '<span class="badge '+(s.plan?'pro':'trial')+'">'+(s.plan?esc(s.plan.name):'Período de teste')+'</span></div>';
+  if(!def||todayKey==='rest'){
+    h+='<div class="card"><h2>Hoje é dia de descanso 💆</h2><p style="margin-top:8px;color:#666;font-size:13px;">Aproveite para recuperar. Seu próximo treino está no calendário.</p></div>';
+  } else {
+    h+='<div class="card"><h2>'+esc(def.name)+'</h2><div style="margin-top:12px;">';
+    def.exercises.forEach(ex=>{
+      h+='<div class="ex-row">'+
+        '<button class="check-btn'+(ex.done?' done':'')+'" data-action="toggle-ex" data-eid="'+ex.id+'"></button>'+
+        '<div class="ex-name">'+esc(ex.name)+
+        (ex.tip?'<div style="font-size:11px;color:var(--blue);">💡 '+esc(ex.tip)+'</div>':'')+
+        '</div>'+
+        '<div class="ex-meta">'+ex.series+'x'+ex.reps+' · '+esc(ex.carga)+'</div>'+
+        (ex.done?'<select class="rpe-select" data-action="log-rpe" data-eid="'+ex.id+'">'+
+          '<option value="">RPE</option>'+[1,2,3,4,5,6,7,8,9,10].map(n=>'<option value="'+n+'">'+n+' — '+rpeLabel(n)+'</option>').join('')+
+          '</select>':'')+'</div>';
+    });
+    h+='</div>';
+    if(s.completedToday){ h+='<button class="btn green full" style="margin-top:14px;" disabled>Treino concluído ✓</button>'; }
+    else { h+='<button class="btn full" style="margin-top:14px;" data-action="concluir-treino">Concluir treino</button>'; }
+    h+='</div>';
+  }
+  var msgs=state.messages[s.id]||[];
+  var last=msgs.slice().reverse().find(m=>m.from==='personal');
+  h+='<div class="card" style="margin-top:12px;">'+(last?'Mensagem do personal: <b>'+esc(last.text)+'</b>':'Nenhuma mensagem nova.')+'</div>';
+  set('a-hoje',h);
+}
+function rpeLabel(n){
+  var l=['','Muito leve','Leve','Leve','Moderado','Moderado','Um esforço','Difícil','Muito difícil','Quase máximo','Máximo'];
+  return l[n]||'';
+}
+function renderAlunoCalendario(){
+  var s=myStudent(); if(!s){ set('a-calendario',''); return; }
+  var plan=state.weeklyPlan[s.id]||{}, defs=state.workoutDefs[s.id]||{};
+  var h='<div class="row-head"><h2>Calendário da semana</h2></div><div class="cal-board">';
+  DAYS.forEach(d=>{
+    var k=plan[d.k]||'rest', isToday=d.k===TODAY_KEY;
+    var label=k==='rest'?'Descanso':(defs[k]?defs[k].name.split(' — ')[0]:k);
+    var cls=k==='rest'?'rest':k;
+    h+='<div class="cal-day'+(isToday?' today':'')+'"><div class="d">'+d.l+(isToday?' •':'')+'</div>'+
+      '<span class="cal-pill '+cls+(isToday&&s.completedToday?' done':'')+'">'+esc(label)+(isToday&&s.completedToday?' ✓':'')+'</span></div>';
+  });
+  h+='</div>';
+  set('a-calendario',h);
+}
+function renderAlunoAvaliacoes(){
+  var s=myStudent(); if(!s){ set('a-avaliacoes',''); return; }
+  var all=state.assessments[s.id]||[];
+  var h='<div class="row-head"><h2>Minha evolução</h2><button class="btn" data-action="preencher-autoaval">Autoavaliação</button></div>';
+  if(!all.length){ h+='<div class="empty-state">Nenhuma avaliação ainda. Preencha uma autoavaliação ou peça ao seu personal.</div>'; }
+  else {
+    h+='<table><tr><th>Data</th><th>Tipo</th><th>Resumo</th></tr>';
+    all.slice().reverse().forEach(a=>{
+      h+='<tr><td class="mono">'+esc(a.date)+'</td><td>'+esc(a.tipo)+'</td><td>'+summaryLine(a)+'</td></tr>';
+    });
+    h+='</table>';
+  }
+  set('a-avaliacoes',h);
+}
+function renderAlunoPlano(){
+  var s=myStudent(); if(!s){ set('a-plano',''); return; }
+  var pp=state.personalProfile||{};
+  var h='<div class="row-head"><h2>Meu plano</h2></div>';
+  if(s.plan){
+    h+='<div class="card success"><b>'+esc(s.plan.name)+'</b><br><span class="mono" style="font-size:17px;">'+esc(s.plan.price)+'</span><br>Válido até '+esc(s.plan.validity)+'.<br><br>'+
+      '<button class="btn outline small" data-action="solicitar-renovacao">Solicitar renovação</button></div>';
+  } else {
+    h+='<div class="card"><b>Período de teste</b><br><span style="font-size:13px;color:#666;">Contrate um plano para ter acesso completo.</span></div>';
+  }
+  h+='<div class="row-head" style="margin-top:20px;"><h2>Contratar plano</h2></div>';
+  if(!state.planCatalog.length){ h+='<div class="empty-state">Seu personal ainda não cadastrou planos.</div>'; }
+  state.planCatalog.forEach(p=>{
+    h+='<div class="plan-card"><h3>'+esc(p.name)+'</h3><div class="price">'+esc(p.price)+'</div>'+
+      '<div class="desc">'+esc(p.description||'')+'</div>'+
+      '<div class="pay-options">';
+    if(pp.pix_key){
+      h+='<div class="pix-box"><b>Pagar via PIX</b><div class="pix-key">'+esc(pp.pix_key)+'</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+        '<button class="btn small green" data-action="copiar-pix" data-pix="'+esc(pp.pix_key)+'">Copiar chave PIX</button>'+
+        (pp.whatsapp?'<button class="btn small" data-action="wa-comprovante" data-wa="'+esc(pp.whatsapp)+'" data-plan="'+esc(p.name)+'">Enviar comprovante 📲</button>':'')+'</div></div>';
+    }
+    if(pp.mercadopago_link){
+      h+='<div style="margin-top:8px;"><a href="'+esc(pp.mercadopago_link)+'" target="_blank" class="btn full outline">💳 Pagar com Mercado Pago</a>'+
+        (pp.whatsapp?'<div style="margin-top:6px;"><button class="btn small full" data-action="wa-comprovante" data-wa="'+esc(pp.whatsapp)+'" data-plan="'+esc(p.name)+'">Após pagar, enviar comprovante 📲</button></div>':'')+'</div>';
+    }
+    h+='<button class="btn ghost full" style="margin-top:8px;" data-action="solicitar-plano" data-pid="'+p.id+'" data-pname="'+esc(p.name)+'" data-pprice="'+esc(p.price)+'">Solicitar via personal</button></div></div>';
+  });
+  set('a-plano',h);
+}
+function renderAlunoMensagens(){
+  var s=myStudent(); if(!s){ set('a-mensagens',''); return; }
+  var h='<div class="row-head"><h2>Mensagens</h2></div>'+
+    '<div style="border:1px solid var(--steel);border-radius:var(--radius);overflow:hidden;">'+
+    '<div class="chat-thread" id="chatAluno">'+chatBubbles(s.id)+'</div>'+
+    '<div class="chat-input-row"><input id="chatAInput" placeholder="Escrever mensagem..."><button class="btn small" data-action="send-msg-aluno">Enviar</button></div></div>';
+  set('a-mensagens',h);
+}
+
+// ── utils de render ───────────────────────────────────────────
+function chatBubbles(sid){
+  var msgs=state.messages[sid]||[];
+  if(!msgs.length) return '<div class="empty-state">Nenhuma mensagem ainda.</div>';
+  return msgs.map(m=>'<div class="bubble from-'+m.from+'">'+esc(m.text)+'</div>').join('');
+}
+function studentSel(selected,id){
+  return '<select class="btn ghost small" id="'+id+'">'+studentList().map(s=>'<option value="'+s.id+'"'+(s.id===selected?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select>';
+}
+function set(id,html){ var el=document.getElementById(id); if(el) el.innerHTML=html; }
+
+// ── modais de formulário ──────────────────────────────────────
+function openNovoAluno(){
+  openModal('Novo aluno',
+    '<div class="field"><label>Nome completo *</label><input id="na_name" placeholder="Nome do aluno"></div>'+
+    '<div class="field-row">'+
+    '<div class="field"><label>Data de nascimento</label><input id="na_birth" type="date"></div>'+
+    '<div class="field"><label>CPF</label><input id="na_cpf" placeholder="000.000.000-00"></div>'+
+    '</div>'+
+    '<div class="field"><label>E-mail *</label><input id="na_email" type="email" placeholder="aluno@email.com"></div>'+
+    '<div class="field"><label>WhatsApp (com DDD)</label><input id="na_wa" placeholder="5511988880000"></div>'+
+    '<div class="field"><label>Objetivo</label><input id="na_obj" placeholder="Ex: Hipertrofia"></div>'+
+    '<div class="field"><label>Restrições / lesões</label><input id="na_rest" placeholder="Ex: Nenhuma"></div>'+
+    '<div class="field"><label>Senha temporária</label><input id="na_pw" value="vigor123" placeholder="Senha para o aluno acessar"></div>'+
+    '<p style="font-size:11px;color:#888;margin-top:-6px;">O aluno usará este e-mail e senha para entrar no app.</p>',
+    async function(){
+      var name=v('na_name'),email=v('na_email'),wa=v('na_wa'),pw=v('na_pw'),birth=v('na_birth'),cpf=v('na_cpf'),obj=v('na_obj'),rest=v('na_rest');
+      if(!name||!email){ showToast('Nome e e-mail são obrigatórios.'); return; }
+      var r=await runAction(()=>api('POST','/api/students',{name,email,whatsapp:wa,cpf,birthdate:birth,objetivo:obj,restricao:rest,password:pw||'vigor123'}),'Aluno "'+name+'" criado.');
+      if(r) closeModal();
+    });
+}
+function openAtribuirPlano(sid){
+  var s=state.students[sid]||{};
+  var catOptions=state.planCatalog.map(p=>'<option value="'+p.id+'" data-name="'+esc(p.name)+'" data-price="'+esc(p.price)+'" data-validity="">'+esc(p.name)+' — '+esc(p.price)+'</option>').join('');
+  openModal('Atribuir / alterar plano — '+esc(s.name),
+    '<div class="field"><label>Selecione do catálogo</label><select id="ap_cat"><option value="">— escolher —</option>'+catOptions+'</select></div>'+
+    '<div class="field"><label>Nome do plano</label><input id="ap_name" value="'+esc(s.plan?s.plan.name:'')+'"></div>'+
+    '<div class="field"><label>Preço</label><input id="ap_price" value="'+esc(s.plan?s.plan.price:'')+'"></div>'+
+    '<div class="field"><label>Válido até</label><input id="ap_validity" placeholder="dd/mm/aaaa" value="'+esc(s.plan?s.plan.validity:'')+'"></div>',
+    async function(){
+      var name=v('ap_name'),price=v('ap_price'),validity=v('ap_validity');
+      var catEl=document.getElementById('ap_cat');
+      var catId=catEl?catEl.value:'';
+      if(!name){ showToast('Nome do plano é obrigatório.'); return; }
+      await runAction(()=>api('PUT','/api/students/'+sid+'/plan',{catalogId:catId||null,name,price,validity}),'Plano atribuído. '+s.name+' agora é Pro!');
+      closeModal();
+    });
+  // preenche ao selecionar do catálogo
+  setTimeout(()=>{
+    var sel=document.getElementById('ap_cat');
+    if(sel) sel.addEventListener('change',function(){
+      var opt=this.options[this.selectedIndex];
+      if(!opt||!opt.value) return;
+      document.getElementById('ap_name').value=opt.dataset.name||'';
+      document.getElementById('ap_price').value=opt.dataset.price||'';
+    });
+  },50);
+}
+function openNovoTreino(){
+  var sid=ui.selectedStudentId;
+  if(!sid){ showToast('Selecione um aluno primeiro.'); return; }
+  openModal('Novo treino — '+esc((state.students[sid]||{}).name),
+    '<div class="field"><label>Nome do treino</label><input id="nt_name" placeholder="Ex: Treino C — Costas e Bíceps"></div>'+
+    '<div class="field"><label>Letra/código (A, B, C...)</label><input id="nt_key" placeholder="Ex: C" maxlength="10"></div>',
+    async function(){
+      var name=v('nt_name'),key=v('nt_key')||'W'+Date.now();
+      if(!name){ showToast('Nome obrigatório.'); return; }
+      await runAction(()=>api('POST','/api/students/'+sid+'/workouts',{name,key,exercises:[]}),'Treino "'+name+'" criado. Adicione exercícios e atribua a um dia no calendário.');
+      closeModal();
+    });
+}
+function openAddExercise(sid,workoutKey){
+  var lib=state.exerciseLibrary;
+  var groups={};
+  lib.forEach(e=>{ if(!groups[e.muscle_group]) groups[e.muscle_group]=[]; groups[e.muscle_group].push(e); });
+  var opts='<option value="">— escolha da biblioteca —</option>';
+  Object.keys(groups).sort().forEach(g=>{
+    opts+='<optgroup label="'+esc(g)+'">'+groups[g].map(e=>'<option value="'+e.id+'" data-name="'+esc(e.name)+'">'+esc(e.name)+'</option>').join('')+'</optgroup>';
+  });
+  openModal('Adicionar exercício',
+    '<div class="field"><label>Buscar na biblioteca</label><select id="ae_lib">'+opts+'</select></div>'+
+    '<div class="field"><label>Ou nome personalizado</label><input id="ae_name" placeholder="Nome do exercício"></div>'+
+    '<div class="field-row">'+
+    '<div class="field"><label>Séries</label><input id="ae_ser" type="number" value="3" min="1"></div>'+
+    '<div class="field"><label>Repetições</label><input id="ae_reps" type="number" value="12" min="1"></div>'+
+    '</div>'+
+    '<div class="field"><label>Carga</label><input id="ae_carga" placeholder="Ex: 30kg ou -"></div>'+
+    '<div class="field"><label>Observação (visível ao aluno)</label><input id="ae_notes" placeholder="Ex: Controle a descida"></div>'+
+    '<div class="field"><label>Dica do personal</label><input id="ae_tip" placeholder="Ex: Mantenha os cotovelos próximos"></div>',
+    async function(){
+      var libSel=document.getElementById('ae_lib');
+      var libOpt=libSel&&libSel.value?libSel.options[libSel.selectedIndex]:null;
+      var name=v('ae_name')||(libOpt?libOpt.dataset.name:'')||'Exercício';
+      var libId=libSel&&libSel.value?libSel.value:null;
+      await runAction(()=>api('POST','/api/workouts/'+sid+'/'+workoutKey+'/exercises',{name,library_id:libId,series:parseInt(v('ae_ser'))||3,reps:parseInt(v('ae_reps'))||12,carga:v('ae_carga')||'-',notes:v('ae_notes')||null,tip:v('ae_tip')||null}),'Exercício adicionado.');
+      closeModal();
+    });
+  setTimeout(()=>{
+    var sel=document.getElementById('ae_lib');
+    if(sel) sel.addEventListener('change',function(){
+      var opt=this.options[this.selectedIndex];
+      if(opt&&opt.value) document.getElementById('ae_name').value='';
+    });
+  },50);
+}
+function openEditExercise(exId){
+  var ex=null;
+  Object.values(state.workoutDefs).forEach(function(wds){
+    Object.values(wds).forEach(function(wd){
+      (wd.exercises||[]).forEach(function(e){ if(e.id===exId) ex=e; });
+    });
+  });
+  if(!ex){ showToast('Exercício não encontrado.'); return; }
+  openModal('Editar exercício — '+esc(ex.name),
+    '<div class="field"><label>Nome</label><input id="ee_name" value="'+esc(ex.name)+'"></div>'+
+    '<div class="field-row">'+
+    '<div class="field"><label>Séries</label><input id="ee_ser" type="number" value="'+ex.series+'"></div>'+
+    '<div class="field"><label>Reps</label><input id="ee_reps" type="number" value="'+ex.reps+'"></div>'+
+    '</div>'+
+    '<div class="field"><label>Carga</label><input id="ee_carga" value="'+esc(ex.carga)+'"></div>'+
+    '<div class="field"><label>Observação</label><input id="ee_notes" value="'+esc(ex.notes||'')+'"></div>'+
+    '<div class="field"><label>Dica do personal</label><input id="ee_tip" value="'+esc(ex.tip||'')+'"></div>',
+    async function(){
+      await runAction(()=>api('PUT','/api/exercises/'+exId,{name:v('ee_name'),series:parseInt(v('ee_ser'))||ex.series,reps:parseInt(v('ee_reps'))||ex.reps,carga:v('ee_carga'),notes:v('ee_notes')||null,tip:v('ee_tip')||null}),'Exercício atualizado.');
+      closeModal();
+    });
+}
+function openNovoExercicioLib(){
+  openModal('Novo exercício personalizado',
+    '<div class="field"><label>Grupo muscular</label><select id="nel_group">'+
+    ['Peito','Costas','Ombros','Bíceps','Tríceps','Pernas','Glúteos','Abdômen','Cardio'].map(g=>'<option value="'+g+'">'+g+'</option>').join('')+
+    '</select></div>'+
+    '<div class="field"><label>Nome do exercício</label><input id="nel_name" placeholder="Nome do exercício"></div>'+
+    '<div class="field"><label>URL do vídeo (YouTube ou outro)</label><input id="nel_video" placeholder="https://youtube.com/watch?v=..."></div>'+
+    '<div class="field"><label>Notas / instruções</label><textarea id="nel_notes" placeholder="Descrição da execução, cuidados..."></textarea></div>',
+    async function(){
+      var name=v('nel_name'),mg=v('nel_group');
+      if(!name){ showToast('Nome obrigatório.'); return; }
+      await runAction(()=>api('POST','/api/exercise-library',{name,muscleGroup:mg,videoUrl:v('nel_video'),notes:v('nel_notes')}),'Exercício "'+name+'" adicionado à biblioteca.');
+      closeModal();
+    });
+}
+function openNovoPlanoCat(){
+  openModal('Novo plano comercial',
+    '<div class="field"><label>Nome do plano</label><input id="np_name" placeholder="Ex: Plano Mensal"></div>'+
+    '<div class="field"><label>Preço</label><input id="np_price" placeholder="Ex: R$ 120,00 / mês"></div>'+
+    '<div class="field"><label>Duração (dias)</label><input id="np_days" type="number" value="30"></div>'+
+    '<div class="field"><label>Descrição</label><textarea id="np_desc" placeholder="O que está incluso neste plano..."></textarea></div>',
+    async function(){
+      var name=v('np_name');
+      if(!name){ showToast('Nome obrigatório.'); return; }
+      await runAction(()=>api('POST','/api/plan-catalog',{name,price:v('np_price'),duration_days:parseInt(v('np_days'))||30,description:v('np_desc')}),'Plano criado.');
+      closeModal();
+    });
+}
+function openEditPlanoCat(pid){
+  var p=state.planCatalog.find(x=>x.id===pid); if(!p) return;
+  openModal('Editar plano — '+esc(p.name),
+    '<div class="field"><label>Nome</label><input id="ep_name" value="'+esc(p.name)+'"></div>'+
+    '<div class="field"><label>Preço</label><input id="ep_price" value="'+esc(p.price)+'"></div>'+
+    '<div class="field"><label>Duração (dias)</label><input id="ep_days" type="number" value="'+p.duration_days+'"></div>'+
+    '<div class="field"><label>Descrição</label><textarea id="ep_desc">'+esc(p.description||'')+'</textarea></div>',
+    async function(){
+      await runAction(()=>api('PUT','/api/plan-catalog/'+pid,{name:v('ep_name'),price:v('ep_price'),duration_days:parseInt(v('ep_days')),description:v('ep_desc')}),'Plano atualizado.');
+      closeModal();
+    });
+}
+function openAvaliacaoModal(sid, existing){
+  var tipo=existing?existing.tipo:(ui.selectedTipo[sid]||'Antropometria');
+  var proto=existing?existing.protocolo:(ui.selectedProtocolo[sid]||'3dobras');
+  var f=existing?existing.fields:{};
+  var bodyId='avalFields';
+  openModal(existing?'Editar avaliação':'Nova avaliação — '+esc((state.students[sid]||{}).name||''),
+    '<div class="field"><label>Tipo</label><select id="av_tipo"'+(existing?' disabled':'')+'>'+
+      TIPOS.map(t=>'<option value="'+t+'"'+(t===tipo?' selected':'')+'>'+t+'</option>').join('')+'</select></div>'+
+    (!existing?'<div class="field" id="proto_field" style="display:'+(tipo==='Adipometria'?'':'none')+'"><label>Protocolo de dobras</label><select id="av_proto">'+
+      ['3dobras','5dobras','7dobras'].map(p=>'<option value="'+p+'"'+(p===proto?' selected':'')+'>'+p+'</option>').join('')+'</select></div>':'') +
+    '<div class="field"><label>Data</label><input id="av_date" value="'+(existing?existing.date:new Date().toLocaleDateString('pt-BR'))+'"></div>'+
+    '<div id="'+bodyId+'">'+avalFields(tipo,proto,f)+'</div>'+
+    '<div class="computed-box" id="av_computed"></div>',
+    async function(){
+      var fields=avalCollect(tipo);
+      var date=v('av_date');
+      var protoVal=document.getElementById('av_proto')?v('av_proto'):proto;
+      if(existing){
+        await runAction(()=>api('PUT','/api/assessments/'+existing.id,{fields,date}),'Avaliação atualizada.');
+      } else {
+        ui.selectedTipo[sid]=tipo;
+        ui.selectedProtocolo[sid]=protoVal;
+        await runAction(()=>api('POST','/api/students/'+sid+'/assessments',{tipo,protocolo:protoVal,date,fields,actorRole:'personal'}),'Avaliação registrada e calculada.');
+      }
+      closeModal();
+    });
+  if(!existing){
+    setTimeout(()=>{
+      var tipoSel=document.getElementById('av_tipo');
+      if(tipoSel) tipoSel.addEventListener('change',function(){
+        tipo=this.value;
+        var pf=document.getElementById('proto_field');
+        if(pf) pf.style.display=tipo==='Adipometria'?'':'none';
+        document.getElementById(bodyId).innerHTML=avalFields(tipo,proto,{});
+        wireAvalPreview(tipo);
+      });
+      var protoSel=document.getElementById('av_proto');
+      if(protoSel) protoSel.addEventListener('change',function(){
+        proto=this.value;
+        document.getElementById(bodyId).innerHTML=avalFields(tipo,proto,{});
+        wireAvalPreview(tipo);
+      });
+      wireAvalPreview(tipo);
+    },50);
+  }
+}
+function avalFields(tipo,proto,f){
+  var v_=(id)=>'<input id="'+id+'" type="number" step="0.1" value="'+(f[id.replace('av_','')]||'')+'">';
+  if(tipo==='Antropometria') return '<div class="field-row"><div class="field"><label>Peso (kg)</label>'+v_('av_peso')+'</div><div class="field"><label>Altura (cm)</label>'+v_('av_altura')+'</div></div>';
+  if(tipo==='Adipometria'){
+    var sexo=f.sexo==='M'?'M':'F';
+    var base='<div class="field-row">'+
+      '<div class="field"><label>Sexo</label><select id="av_sexo"><option value="F"'+(sexo==='F'?' selected':'')+'>Feminino</option><option value="M"'+(sexo==='M'?' selected':'')+'>Masculino</option></select></div>'+
+      '<div class="field"><label>Idade</label>'+v_('av_idade')+'</div></div>'+
+      '<div class="field-row"><div class="field"><label>Peso (kg)</label>'+v_('av_peso')+'</div><div class="field"><label>Altura (cm)</label>'+v_('av_altura')+'</div></div>';
+    if(proto==='3dobras') return base+'<div class="field-row">'+
+      '<div class="field"><label id="lbl_d1">'+(sexo==='M'?'Dobra Peitoral':'Dobra Tríceps')+' (mm)</label>'+v_('av_dobra1')+'</div>'+
+      '<div class="field"><label id="lbl_d2">'+(sexo==='M'?'Dobra Abdominal':'Dobra Suprailíaca')+' (mm)</label>'+v_('av_dobra2')+'</div>'+
+      '<div class="field"><label>Dobra Coxa (mm)</label>'+v_('av_dobra3')+'</div></div>';
+    if(proto==='5dobras') return base+'<div class="field-row">'+
+      '<div class="field"><label>Peitoral (mm)</label>'+v_('av_peitoral')+'</div>'+
+      '<div class="field"><label>Abdominal (mm)</label>'+v_('av_abdominal')+'</div>'+
+      '<div class="field"><label>Coxa (mm)</label>'+v_('av_coxa')+'</div>'+
+      '<div class="field"><label>Suprailíaca (mm)</label>'+v_('av_suprailiaca')+'</div>'+
+      '<div class="field"><label>Axilar (mm)</label>'+v_('av_axilar')+'</div></div>';
+    // 7 dobras
+    return base+'<div class="field-row">'+
+      ['peitoral','triceps','subescapular','suprailiaca','abdominal','coxa','axilar'].map(d=>'<div class="field"><label>'+d.charAt(0).toUpperCase()+d.slice(1)+' (mm)</label>'+v_('av_'+d)+'</div>').join('')+'</div>';
+  }
+  if(tipo==='Perimetria') return '<div class="field-row">'+
+    [['cintura','Cintura (cm)'],['quadril','Quadril (cm)'],['pescoco','Pescoço (cm)'],['braco_d','Braço D (cm)'],['braco_e','Braço E (cm)'],
+     ['antebraco','Antebraço (cm)'],['torax','Tórax (cm)'],['coxa_d','Coxa D (cm)'],['coxa_e','Coxa E (cm)'],['panturrilha','Panturrilha (cm)']].map(([id,lbl])=>
+    '<div class="field"><label>'+lbl+'</label><input id="av_'+id+'" type="number" step="0.1" value="'+(f[id]||'')+'"></div>').join('')+'</div>';
+  if(tipo==='Bioimpedância') return '<div class="field-row"><div class="field"><label>Peso (kg)</label>'+v_('av_peso')+'</div><div class="field"><label>% Gordura (do aparelho)</label>'+v_('av_gordura')+'</div></div>';
+  // Autoavaliação
+  return '<div class="field-row"><div class="field"><label>Peso (kg)</label>'+v_('av_peso')+'</div><div class="field"><label>Cintura (cm)</label>'+v_('av_cintura')+'</div></div>'+
+    '<div class="field-row"><div class="field"><label>Quadril (cm)</label>'+v_('av_quadril')+'</div><div class="field"><label>Bem-estar (0-10)</label><input id="av_bem" type="number" min="0" max="10" value="'+(f.bem||'')+'"></div></div>';
+}
+function avalCollect(tipo){
+  var ids=tipo==='Antropometria'?['peso','altura']:
+    tipo==='Adipometria'?['sexo','idade','peso','altura','dobra1','dobra2','dobra3','peitoral','abdominal','coxa','suprailiaca','axilar','triceps','subescapular']:
+    tipo==='Perimetria'?['cintura','quadril','pescoco','braco_d','braco_e','antebraco','torax','coxa_d','coxa_e','panturrilha']:
+    tipo==='Bioimpedância'?['peso','gordura']:['peso','cintura','quadril','bem'];
+  var f={};
+  ids.forEach(function(id){
+    var el=document.getElementById('av_'+id);
+    if(el) f[id]=el.value;
+  });
+  return f;
+}
+function wireAvalPreview(tipo){
+  ['peso','altura','sexo','idade','dobra1','dobra2','dobra3','cintura','quadril','peitoral','abdominal','coxa','suprailiaca','axilar','triceps','subescapular'].forEach(id=>{
+    var el=document.getElementById('av_'+id);
+    if(el) el.addEventListener('input',function(){ updateAvalPreview(tipo); if(id==='sexo') updateDobraLabels(this.value); });
+  });
+  updateAvalPreview(tipo);
+}
+function updateAvalPreview(tipo){
+  var f=avalCollect(tipo);
+  var el=document.getElementById('av_computed'); if(!el) return;
+  var peso=parseFloat(f.peso)||0,alt=parseFloat(f.altura)||0;
+  if(tipo==='Antropometria' && peso && alt){
+    var imc=Math.round(peso/((alt/100)**2)*10)/10;
+    var lbl=imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':'Obeso';
+    el.textContent='IMC: '+imc+' ('+lbl+')'; el.style.display='block';
+  } else if(tipo==='Adipometria'){
+    var sexo=f.sexo==='M'?'M':'F',idade=parseFloat(f.idade)||0;
+    var d1=parseFloat(f.dobra1)||parseFloat(f.peitoral)||0,d2=parseFloat(f.dobra2)||parseFloat(f.abdominal)||0,d3=parseFloat(f.dobra3)||parseFloat(f.coxa)||0;
+    var soma=d1+d2+d3;
+    if(soma>0){
+      var bd=sexo==='M'?1.10938-0.0008267*soma+0.0000016*soma**2-0.0002574*idade:1.0994921-0.0009929*soma+0.0000023*soma**2-0.0001392*idade;
+      var bf=bd?Math.round(((495/bd)-450)*10)/10:0;
+      el.textContent='% Gordura estimado (J&P 3 dobras): '+bf+'%'+(peso&&alt?' · IMC: '+Math.round(peso/((alt/100)**2)*10)/10:''); el.style.display='block';
+    }
+  } else if(tipo==='Perimetria'){
+    var cint=parseFloat(f.cintura)||0,quad=parseFloat(f.quadril)||0;
+    if(cint&&quad){ el.textContent='RCQ: '+Math.round(cint/quad*100)/100; el.style.display='block'; }
+  } else { el.style.display='none'; }
+}
+function updateDobraLabels(sexo){
+  var l1=document.getElementById('lbl_d1'),l2=document.getElementById('lbl_d2');
+  if(l1) l1.textContent=(sexo==='M'?'Dobra Peitoral':'Dobra Tríceps')+' (mm)';
+  if(l2) l2.textContent=(sexo==='M'?'Dobra Abdominal':'Dobra Suprailíaca')+' (mm)';
+}
+
+// ── IA: painel flutuante ──────────────────────────────────────
+function logAI(cmd,resp,ok){
+  var log=document.getElementById('aiLog'); if(!log) return;
+  var empty=log.querySelector('.empty-state'); if(empty) empty.remove();
+  var you=document.createElement('div'); you.className='bubble from-personal'; you.style.cssText='align-self:flex-end;max-width:90%'; you.textContent=cmd; log.appendChild(you);
+  var ai=document.createElement('div'); ai.className='bubble from-aluno'; ai.style.cssText='max-width:90%;border-color:'+(ok?'#B7E2C9':'#F3C0B3'); ai.textContent='🤖 '+resp; log.appendChild(ai);
+  log.scrollTop=log.scrollHeight;
+}
+async function sendAICommand(){
+  var inp=document.getElementById('aiInput'); if(!inp) return;
+  var cmd=inp.value.trim(); if(!cmd) return;
+  inp.value=''; inp.disabled=true;
+  try{
+    var r=await api('POST','/api/ai-command',{command:cmd});
+    logAI(cmd,r.msg,r.ok);
+    if(r.ok) await refreshState();
+  }catch(e){ logAI(cmd,'Erro: '+e.message,false); }
+  inp.disabled=false; inp.focus();
+}
+
+// ── helpers ───────────────────────────────────────────────────
+function v(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+function sendChat(which){
+  var inputId=which==='personal'?'chatPInput':'chatAInput';
+  var inp=document.getElementById(inputId); if(!inp) return;
+  var text=inp.value.trim(); if(!text) return;
+  var sid=which==='personal'?ui.selectedStudentId:(session.user&&session.user.id);
+  if(!sid) return;
+  inp.value='';
+  runAction(()=>api('POST','/api/students/'+sid+'/messages',{from:which==='personal'?'personal':'aluno',text}),null)
+    .then(()=>{ var fi=document.getElementById(inputId); if(fi) fi.focus(); });
+}
+
+// ── DELEGAÇÃO DE CLICKS ───────────────────────────────────────
+document.addEventListener('click',async function(e){
+  // modal actions
+  var ma=e.target.closest('[data-ma]');
+  if(ma){ if(ma.dataset.ma==='save'&&window._modalSave) window._modalSave(); closeModal(); return; }
+  if(e.target.id==='modalBg'){closeModal();return;}
+
+  // auth links
+  var authLink=e.target.closest('[data-auth]');
+  if(authLink){ authScreen=authLink.dataset.auth; renderAuthScreen(); return; }
+
+  // nav
+  var navBtn=e.target.closest('[data-nav]');
+  if(navBtn){ goPersonalPanel(navBtn.dataset.nav); return; }
+  var anavBtn=e.target.closest('[data-anav]');
+  if(anavBtn){ goAlunoPanel(anavBtn.dataset.anav); return; }
+
+  // filter
+  var filterBtn=e.target.closest('[data-filter]');
+  if(filterBtn){ ui.filterStatus=filterBtn.dataset.filter; renderAlunos(); return; }
+  var tipoBtn=e.target.closest('[data-tipo]');
+  if(tipoBtn){ var sid=ui.selectedStudentId; if(sid){ ui.selectedTipo[sid]=tipoBtn.dataset.tipo; renderAvaliacoes();} return; }
+  var protoBtn=e.target.closest('[data-proto]');
+  if(protoBtn){ var sid=ui.selectedStudentId; if(sid){ ui.selectedProtocolo[sid]=protoBtn.dataset.proto; renderAvaliacoes();} return; }
+  var libfBtn=e.target.closest('[data-libf]');
+  if(libfBtn){ ui.libFilter=libfBtn.dataset.libf; renderBiblioteca(); return; }
+
+  var ab=e.target.closest('[data-action]');
+  if(!ab) return;
+  var action=ab.dataset.action, sid=ab.dataset.sid;
+
+  // auth actions
+  if(action==='logout'){ doLogout(); return; }
+  if(action==='google-demo'){
+    try{
+      var r=await api('POST','/api/auth/login',{email:'personal@vigor.app',password:'vigor123'});
+      saveSession(r.token,r.user); await refreshState(); showApp();
+    }catch(e){ showToast('Demo: '+e.message); } return;
+  }
+  if(action==='toggle-ai'){ var p=document.getElementById('aiPanel'); p.hidden=!p.hidden; return; }
+  if(action==='close-ai'){ document.getElementById('aiPanel').hidden=true; return; }
+  if(action==='send-ai'){ sendAICommand(); return; }
+  if(action==='send-msg-personal'){ sendChat('personal'); return; }
+  if(action==='send-msg-aluno'){ sendChat('aluno'); return; }
+
+  // personal actions
+  if(action==='dismiss-alert') await runAction(()=>api('DELETE','/api/alerts/'+ab.dataset.aid),null);
+  else if(action==='novo-aluno') openNovoAluno();
+  else if(action==='ver-perfil'){ ui.expandedStudentId=(ui.expandedStudentId===sid)?null:sid; renderAlunos(); }
+  else if(action==='toggle-access'){
+    var s=state.students[sid]; if(!s) return;
+    await runAction(()=>api('PUT','/api/students/'+sid+'/access',{active:!s.active}),(s.active?'Acesso de ':'Acesso de ')+s.name+(s.active?' desativado.':', reativado.'));
+  }
+  else if(action==='atribuir-plano') openAtribuirPlano(sid);
+  else if(action==='enviar-acesso'){
+    try{
+      var r=await api('GET','/api/students/'+sid+'/access-data');
+      var msg='Olá '+r.name+'! Seus dados de acesso ao VIGOR:\n\nLink: '+window.location.origin+'\nE-mail: '+r.email+'\nSenha: (a que você definiu no cadastro)\n\nBem-vindo(a)! 💪';
+      var url='https://wa.me/'+(r.whatsapp||'')+' ?text='+encodeURIComponent(msg);
+      window.open(url,'_blank');
+    }catch(er){ showToast('Erro: '+er.message); }
+  }
+  else if(action==='novo-treino') openNovoTreino();
+  else if(action==='add-exercise') openAddExercise(ab.dataset.sid,ab.dataset.wk);
+  else if(action==='edit-exercise') openEditExercise(ab.dataset.eid);
+  else if(action==='del-exercise'){
+    if(confirm('Excluir este exercício?')) await runAction(()=>api('DELETE','/api/exercises/'+ab.dataset.eid),'Exercício excluído.');
+  }
+  else if(action==='del-treino'){
+    if(confirm('Excluir todo este treino e seus exercícios?')) await runAction(()=>api('DELETE','/api/workouts/'+ab.dataset.sid+'/'+ab.dataset.wk),'Treino excluído.');
+  }
+  else if(action==='novo-exercicio-lib') openNovoExercicioLib();
+  else if(action==='del-exercicio-lib'){
+    if(confirm('Excluir este exercício da biblioteca?')) await runAction(()=>api('DELETE','/api/exercise-library/'+ab.dataset.lid),'Exercício excluído.');
+  }
+  else if(action==='nova-avaliacao') openAvaliacaoModal(ui.selectedStudentId,null);
+  else if(action==='editar-avaliacao'){
+    var entry=(state.assessments[ab.dataset.sid]||[]).find(a=>a.id===ab.dataset.aid);
+    if(entry) openAvaliacaoModal(ab.dataset.sid,entry);
+  }
+  else if(action==='excluir-avaliacao'){
+    if(confirm('Excluir esta avaliação?')) await runAction(()=>api('DELETE','/api/assessments/'+ab.dataset.aid),'Avaliação excluída.');
+  }
+  else if(action==='select-chat'){ ui.selectedStudentId=sid; renderMensagens(); renderTreinos(); renderAvaliacoes(); }
+  else if(action==='novo-plano-cat') openNovoPlanoCat();
+  else if(action==='edit-plano-cat') openEditPlanoCat(ab.dataset.pid);
+  else if(action==='del-plano-cat'){
+    if(confirm('Excluir este plano?')) await runAction(()=>api('DELETE','/api/plan-catalog/'+ab.dataset.pid),'Plano excluído.');
+  }
+  else if(action==='save-payment-cfg'){
+    await runAction(()=>api('PUT','/api/personal/profile',{pixKey:v('cfgPix'),mercadopagoLink:v('cfgMp'),whatsapp:v('cfgWa')}),'Configurações de pagamento salvas.');
+  }
+  else if(action==='save-perfil'){
+    await runAction(()=>api('PUT','/api/personal/profile',{businessName:v('pfBiz'),whatsapp:v('pfWa'),pixKey:v('pfPix'),mercadopagoLink:v('pfMp')}),'Perfil salvo.');
+  }
+  else if(action==='gen-suggestions'){
+    showToast('Analisando RPE dos treinos...');
+    var r=await api('POST','/api/students/'+sid+'/suggest-loads');
+    if(r&&r.count>0){ showToast(r.count+' sugestão(ões) de carga gerada(s). Veja na tela de IA.'); await refreshState(); goPersonalPanel('ia'); }
+    else { showToast('Nenhum dado de RPE suficiente ainda. O aluno precisa registrar o esforço nos exercícios.'); }
+  }
+  else if(action==='apply-load'){
+    await runAction(()=>api('PUT','/api/exercises/'+ab.dataset.eid,{carga:ab.dataset.load}),null);
+    if(ab.dataset.sugid) await api('DELETE','/api/ai-suggestions/'+ab.dataset.sugid);
+    await refreshState(); showToast('Carga atualizada para '+ab.dataset.load+'.');
+  }
+  else if(action==='ia-descartar') await runAction(()=>api('DELETE','/api/ai-suggestions/'+ab.dataset.sugid),'Sugestão descartada.');
+  else if(action==='ia-checkin'){
+    var nome=(state.students[sid]||{}).name||''; var firstName=nome.split(' ')[0];
+    await runAction(async()=>{
+      await api('POST','/api/students/'+sid+'/messages',{from:'personal',text:'Oi '+firstName+', como você está? Vamos ajustar seu treino — me conta!'});
+      if(ab.dataset.sugid) await api('DELETE','/api/ai-suggestions/'+ab.dataset.sugid);
+      await api('DELETE','/api/students/'+sid+'/alerts/by-type/sem_treino');
+    },'Check-in enviado a '+nome+'.');
+  }
+  // aluno actions
+  else if(action==='toggle-ex'){
+    var eid=ab.dataset.eid;
+    var s=myStudent(); if(!s) return;
+    // find exercise
+    var exFound=null;
+    Object.values(state.workoutDefs[s.id]||{}).forEach(wd=>{ (wd.exercises||[]).forEach(ex=>{ if(ex.id===eid) exFound=ex; }); });
+    if(!exFound) return;
+    await runAction(()=>api('PUT','/api/exercises/'+eid,{done:!exFound.done}),null);
+  }
+  else if(action==='log-rpe'){
+    // handled in change event
+  }
+  else if(action==='concluir-treino'){
+    var s=myStudent(); if(!s) return;
+    await runAction(()=>api('POST','/api/students/'+s.id+'/complete-today'),'Treino concluído! Seu personal foi notificado. 💪');
+  }
+  else if(action==='preencher-autoaval'){
+    var s=myStudent(); if(!s) return;
+    openModal('Autoavaliação',
+      '<div class="field-row"><div class="field"><label>Peso (kg)</label><input id="aa_peso" type="number" step="0.1"></div><div class="field"><label>Cintura (cm)</label><input id="aa_cintura" type="number" step="0.1"></div></div>'+
+      '<div class="field-row"><div class="field"><label>Quadril (cm)</label><input id="aa_quadril" type="number" step="0.1"></div><div class="field"><label>Bem-estar (0-10)</label><input id="aa_bem" type="number" min="0" max="10"></div></div>',
+      async function(){
+        var f={peso:v('aa_peso'),cintura:v('aa_cintura'),quadril:v('aa_quadril'),bem:v('aa_bem')};
+        await runAction(()=>api('POST','/api/students/'+s.id+'/assessments',{tipo:'Autoavaliação',date:new Date().toLocaleDateString('pt-BR'),fields:f,actorRole:'aluno'}),'Autoavaliação enviada ao seu personal.');
+        closeModal();
+      });
+  }
+  else if(action==='solicitar-renovacao'){
+    var s=myStudent(); if(!s) return;
+    await runAction(()=>api('POST','/api/students/'+s.id+'/alerts',{type:'solicitacao_plano',text:s.name+' solicitou renovação do plano.'}),'Solicitação enviada ao seu personal.');
+  }
+  else if(action==='solicitar-plano'){
+    var s=myStudent(); if(!s) return;
+    await runAction(()=>api('POST','/api/students/'+s.id+'/alerts',{type:'solicitacao_plano',text:s.name+' solicitou contratação do plano "'+ab.dataset.pname+'" ('+ab.dataset.pprice+').'}),'Solicitação enviada ao seu personal.');
+    showToast('Solicitação enviada! Aguarde o seu personal ativar o plano.');
+  }
+  else if(action==='copiar-pix'){
+    try{ await navigator.clipboard.writeText(ab.dataset.pix); showToast('Chave PIX copiada! ✓'); }
+    catch(e){ showToast('Chave PIX: '+ab.dataset.pix); }
+  }
+  else if(action==='wa-comprovante'){
+    var msg='Olá! Acabei de efetuar o pagamento do '+ab.dataset.plan+'. Segue o comprovante:';
+    window.open('https://wa.me/'+ab.dataset.wa+'?text='+encodeURIComponent(msg),'_blank');
+  }
+});
+
+// ── change events ─────────────────────────────────────────────
+document.addEventListener('change',async function(e){
+  if(e.target.id==='selStudTreinos'){ ui.selectedStudentId=e.target.value; renderTreinos(); }
+  if(e.target.id==='selStudAval'){ ui.selectedStudentId=e.target.value; renderAvaliacoes(); }
+  if(e.target.classList.contains('day-sel')){
+    var day=e.target.dataset.day, sid=e.target.dataset.sid;
+    await runAction(()=>api('PUT','/api/students/'+sid+'/weekly-plan/'+day,{workoutKey:e.target.value}),'Treino de '+day.toUpperCase()+' atualizado.');
+  }
+  if(e.target.dataset.action==='log-rpe'){
+    var rpe=parseInt(e.target.value); if(!rpe) return;
+    var s=myStudent(); if(!s) return;
+    var eid=e.target.dataset.eid;
+    await api('POST','/api/exercise-logs',{exerciseId:eid,studentId:s.id,date:new Date().toLocaleDateString('pt-BR'),rpe});
+    showToast('RPE '+rpe+' registrado. A IA pode analisar e sugerir ajuste de carga.');
+  }
+});
+
+// ── keydown (enter) ───────────────────────────────────────────
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter') return;
+  if(e.target.id==='loginEmail'||e.target.id==='loginPw') doLogin();
+  if(e.target.id==='chatPInput') sendChat('personal');
+  if(e.target.id==='chatAInput') sendChat('aluno');
+  if(e.target.id==='aiInput') sendAICommand();
+});
+
+// ── auth button events (delegated) ───────────────────────────
+document.getElementById('authWrap').addEventListener('click',async function(e){
+  if(e.target.id==='loginBtn') doLogin();
+  if(e.target.id==='rpBtn') doRegisterPersonal();
+  if(e.target.id==='rsBtn') doRegisterStudent();
+  if(e.target.id==='fpBtn') doForgot();
+  if(e.target.id==='resetBtn') doReset();
+});
+
+// ── microfone ─────────────────────────────────────────────────
+(function(){
+  var SRI=window.SpeechRecognition||window.webkitSpeechRecognition, recog=null;
+  if(SRI){ recog=new SRI(); recog.lang='pt-BR'; recog.interimResults=false;
+    recog.onresult=function(e){ document.getElementById('aiInput').value=e.results[0][0].transcript; };
+    recog.onerror=function(){ showToast('Não foi possível captar áudio. Use o campo de texto.'); };
+  }
+  var micBtn=document.getElementById('micBtn');
+  micBtn.addEventListener('click',function(){
+    if(!recog){ showToast('Reconhecimento de voz não disponível neste navegador.'); return; }
+    try{ micBtn.classList.add('mic-on'); recog.start(); showToast('🎤 Ouvindo...'); }catch(er){ micBtn.classList.remove('mic-on'); }
+  });
+  if(SRI){ var r=recog; r.onend=function(){ micBtn.classList.remove('mic-on'); }; }
+})();
+
+// ── INIT ──────────────────────────────────────────────────────
+(async function init(){
+  // verificar se é reset de senha
+  if(window.location.search.includes('token=')){
+    authScreen='reset'; renderAuthScreen(); showAuth(); return;
+  }
+  if(session.token && session.user){
+    try{
+      var r=await api('GET','/api/auth/me');
+      saveSession(session.token, r.user);
+      await refreshState();
+      showApp();
+      if(session.user.role==='personal') goPersonalPanel('dashboard');
+      else goAlunoPanel('hoje');
+    }catch(e){ clearSession(); authScreen='login'; renderAuthScreen(); showAuth(); }
+  } else {
+    authScreen='login'; renderAuthScreen(); showAuth();
+  }
+})();
+</script>
+</body>
+</html>
