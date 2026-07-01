@@ -81,15 +81,19 @@ async function requireAuth(req){
   if(!u) throw {status:401, message:'Não autenticado.'};
   return u;
 }
-async function getDefaultPersonalId(){
-  const r = await dbGet("SELECT id FROM users WHERE role='personal' LIMIT 1");
-  return r ? r.id : null;
-}
 async function resolvePersonalId(req){
   const u = await authUser(req);
   if(u && u.role==='personal') return u.id;
-  if(u && u.role==='aluno') return (await dbGet('SELECT personal_id FROM users WHERE id=?', u.id))?.personal_id;
-  return await getDefaultPersonalId(); // modo demo
+  if(u && u.role==='aluno') return (await dbGet('SELECT personal_id FROM users WHERE id=?', u.id))?.personal_id||null;
+  return null;
+}
+async function requirePid(req,res){
+  const pid = await resolvePersonalId(req);
+  if(!pid){ sendJson(res,401,{error:'Não autenticado.'}); return null; }
+  return pid;
+}
+async function studentBelongsTo(studentId,pid){
+  return !!(await dbGet('SELECT id FROM users WHERE id=? AND personal_id=?', studentId,pid));
 }
 
 // ── cálculos avaliação ────────────────────────────────────────
@@ -399,9 +403,10 @@ route('POST','/api/auth/register-student',async(req,res)=>{
   const requiredFields=['name','email','password','whatsapp','birthdate'];
   for(const f of requiredFields) if(!b[f]) return sendJson(res,400,{error:`Campo obrigatório: ${f}`});
   if(await dbGet('SELECT id FROM users WHERE email=?', b.email)) return sendJson(res,409,{error:'E-mail já cadastrado.'});
-  // student auto-register: linked to first personal in system (ou via token de convite no futuro)
-  const personalId = b.personalId || await getDefaultPersonalId();
-  if(!personalId) return sendJson(res,400,{error:'Nenhum personal encontrado. Aguarde o convite do seu personal trainer.'});
+  if(!b.personalId) return sendJson(res,400,{error:'Link de convite inválido. Peça o link de cadastro ao seu personal trainer.'});
+  const personal = await dbGet("SELECT id FROM users WHERE id=? AND role='personal'", b.personalId);
+  if(!personal) return sendJson(res,400,{error:'Link de convite inválido ou personal não encontrado.'});
+  const personalId = personal.id;
   const {hash,salt}=hashPassword(b.password);
   const sid=uid('u');
   const initials=b.name.trim().split(/\s+/).map(p=>p[0]).slice(0,2).join('').toUpperCase();
@@ -461,14 +466,14 @@ route('POST','/api/auth/reset-password',async(req,res)=>{
 
 // ── PERSONAL PROFILE ─────────────────────────────────────────
 route('GET','/api/personal/profile',async(req,res)=>{
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   const pp=await dbGet('SELECT * FROM personal_profiles WHERE user_id=?', pid)||{};
   const u=await dbGet('SELECT name,email,whatsapp FROM users WHERE id=?', pid)||{};
   sendJson(res,200,{...pp,...u});
 });
 route('PUT','/api/personal/profile',async(req,res)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   await dbRun('INSERT INTO personal_profiles (user_id,business_name,whatsapp,pix_key,mercadopago_link) VALUES (?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET business_name=excluded.business_name,whatsapp=excluded.whatsapp,pix_key=excluded.pix_key,mercadopago_link=excluded.mercadopago_link', pid,b.businessName||'',b.whatsapp||'',b.pixKey||'',b.mercadopagoLink||'');
   if(b.whatsapp) await dbRun('UPDATE users SET whatsapp=? WHERE id=?', b.whatsapp,pid);
   sendJson(res,200,{ok:true});
@@ -476,15 +481,20 @@ route('PUT','/api/personal/profile',async(req,res)=>{
 
 // ── ESTADO COMPLETO ───────────────────────────────────────────
 route('GET','/api/state',async(req,res)=>{
-  const pid=await resolvePersonalId(req);
-  if(!pid) return sendJson(res,200,{students:{},weeklyPlan:{},workoutDefs:{},assessments:{},messages:{},aiSuggestions:{},alerts:[],planCatalog:[],personalProfile:{},exerciseLibrary:[]});
+  const pid=await requirePid(req,res); if(!pid) return;
   sendJson(res,200,await serializeFullState(pid));
+});
+
+// ── LINK DE CONVITE ────────────────────────────────────────────
+route('GET','/api/personal/invite-link',async(req,res)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  sendJson(res,200,{personalId:pid,path:'/?p='+pid});
 });
 
 // ── ALUNOS ────────────────────────────────────────────────────
 route('POST','/api/students',async(req,res)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   if(!b.name||!b.email) return sendJson(res,400,{error:'Nome e e-mail são obrigatórios.'});
   if(await dbGet('SELECT id FROM users WHERE email=?', b.email)) return sendJson(res,409,{error:'E-mail já cadastrado.'});
   const {hash,salt}=hashPassword(b.password||'vigor123');
@@ -499,7 +509,7 @@ route('POST','/api/students',async(req,res)=>{
 
 route('PUT','/api/students/:id/access',async(req,res,p)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   await dbRun('UPDATE users SET active=? WHERE id=? AND personal_id=?', b.active?1:0,p.id,pid);
   await audit(pid,'personal',b.active?'activate':'deactivate','student',p.id,null);
   sendJson(res,200,{ok:true});
@@ -507,7 +517,8 @@ route('PUT','/api/students/:id/access',async(req,res,p)=>{
 
 route('PUT','/api/students/:id/plan',async(req,res,p)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   await dbRun('INSERT INTO plans (id,student_id,catalog_id,name,price,validity) VALUES (?,?,?,?,?,?)', uid('plan'),p.id,b.catalogId||null,b.name||'Plano',b.price||'',b.validity||'');
   await dbRun("UPDATE users SET status='pro' WHERE id=?", p.id);
   await audit(pid,'personal','assign_plan','student',p.id,b);
@@ -515,7 +526,7 @@ route('PUT','/api/students/:id/plan',async(req,res,p)=>{
 });
 
 route('GET','/api/students/:id/access-data',async(req,res,p)=>{
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   const u=await dbGet('SELECT name,email,whatsapp FROM users WHERE id=? AND personal_id=?', p.id,pid);
   if(!u) return sendJson(res,404,{error:'Aluno não encontrado.'});
   sendJson(res,200,{name:u.name,email:u.email,whatsapp:u.whatsapp,loginUrl:'/login'});
@@ -523,12 +534,12 @@ route('GET','/api/students/:id/access-data',async(req,res,p)=>{
 
 // ── PLANOS (CATÁLOGO) ─────────────────────────────────────────
 route('GET','/api/plan-catalog',async(req,res)=>{
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   sendJson(res,200,await dbAll('SELECT * FROM plan_catalog WHERE personal_id=? ORDER BY created_at', pid));
 });
 route('POST','/api/plan-catalog',async(req,res)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   if(!b.name) return sendJson(res,400,{error:'Nome é obrigatório.'});
   const id=uid('cat');
   await dbRun('INSERT INTO plan_catalog (id,personal_id,name,price,duration_days,description) VALUES (?,?,?,?,?,?)', id,pid,b.name,b.price||'',b.duration_days||30,b.description||'');
@@ -536,22 +547,24 @@ route('POST','/api/plan-catalog',async(req,res)=>{
 });
 route('PUT','/api/plan-catalog/:id',async(req,res,p)=>{
   const b=await readBody(req);
-  await dbRun('UPDATE plan_catalog SET name=COALESCE(?,name),price=COALESCE(?,price),duration_days=COALESCE(?,duration_days),description=COALESCE(?,description) WHERE id=?', b.name||null,b.price||null,b.duration_days||null,b.description||null,p.id);
+  const pid=await requirePid(req,res); if(!pid) return;
+  await dbRun('UPDATE plan_catalog SET name=COALESCE(?,name),price=COALESCE(?,price),duration_days=COALESCE(?,duration_days),description=COALESCE(?,description) WHERE id=? AND personal_id=?', b.name||null,b.price||null,b.duration_days||null,b.description||null,p.id,pid);
   sendJson(res,200,{ok:true});
 });
 route('DELETE','/api/plan-catalog/:id',async(req,res,p)=>{
-  await dbRun('DELETE FROM plan_catalog WHERE id=?', p.id);
+  const pid=await requirePid(req,res); if(!pid) return;
+  await dbRun('DELETE FROM plan_catalog WHERE id=? AND personal_id=?', p.id,pid);
   sendJson(res,200,{ok:true});
 });
 
 // ── BIBLIOTECA DE EXERCÍCIOS ──────────────────────────────────
 route('GET','/api/exercise-library',async(req,res)=>{
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   sendJson(res,200,await dbAll('SELECT * FROM exercise_library WHERE personal_id IS NULL OR personal_id=? ORDER BY muscle_group,name', pid));
 });
 route('POST','/api/exercise-library',async(req,res)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   if(!b.name||!b.muscleGroup) return sendJson(res,400,{error:'Nome e grupo muscular são obrigatórios.'});
   const id=uid('lib');
   await dbRun('INSERT INTO exercise_library (id,personal_id,muscle_group,name,video_url,notes,is_custom) VALUES (?,?,?,?,?,?,1)', id,pid,b.muscleGroup,b.name,b.videoUrl||'',b.notes||'');
@@ -559,25 +572,29 @@ route('POST','/api/exercise-library',async(req,res)=>{
 });
 route('PUT','/api/exercise-library/:id',async(req,res,p)=>{
   const b=await readBody(req);
-  await dbRun('UPDATE exercise_library SET name=COALESCE(?,name),video_url=COALESCE(?,video_url),notes=COALESCE(?,notes) WHERE id=?', b.name||null,b.videoUrl??null,b.notes??null,p.id);
+  const pid=await requirePid(req,res); if(!pid) return;
+  await dbRun('UPDATE exercise_library SET name=COALESCE(?,name),video_url=COALESCE(?,video_url),notes=COALESCE(?,notes) WHERE id=? AND personal_id=?', b.name||null,b.videoUrl??null,b.notes??null,p.id,pid);
   sendJson(res,200,{ok:true});
 });
 route('DELETE','/api/exercise-library/:id',async(req,res,p)=>{
-  await dbRun('DELETE FROM exercise_library WHERE id=?', p.id);
+  const pid=await requirePid(req,res); if(!pid) return;
+  await dbRun('DELETE FROM exercise_library WHERE id=? AND personal_id=?', p.id,pid);
   sendJson(res,200,{ok:true});
 });
 
 // ── TREINOS ───────────────────────────────────────────────────
 route('PUT','/api/students/:id/weekly-plan/:day',async(req,res,p)=>{
   const b=await readBody(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   await dbRun('INSERT INTO weekly_plan (student_id,day_key,workout_key) VALUES (?,?,?) ON CONFLICT(student_id,day_key) DO UPDATE SET workout_key=excluded.workout_key', p.id,p.day,b.workoutKey);
   sendJson(res,200,{ok:true});
 });
 route('POST','/api/students/:id/workouts',async(req,res,p)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   if(!b.name) return sendJson(res,400,{error:'Nome do treino é obrigatório.'});
-  const existingKey = await dbGet('SELECT workout_key FROM workouts WHERE student_id=? AND name=?', p.id,b.name);
   const key=b.key||('W'+uid('').slice(0,6));
   const wid=uid('w');
   await dbRun('INSERT INTO workouts (id,student_id,workout_key,name) VALUES (?,?,?,?)', wid,p.id,key,b.name);
@@ -590,6 +607,8 @@ route('POST','/api/students/:id/workouts',async(req,res,p)=>{
   sendJson(res,201,{id:wid,key});
 });
 route('DELETE','/api/workouts/:studentId/:workoutKey',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.studentId,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   const w=await dbGet('SELECT id FROM workouts WHERE student_id=? AND workout_key=?', p.studentId,p.workoutKey);
   if(!w) return sendJson(res,404,{error:'Treino não encontrado.'});
   await dbRun('DELETE FROM workouts WHERE id=?', w.id);
@@ -598,6 +617,8 @@ route('DELETE','/api/workouts/:studentId/:workoutKey',async(req,res,p)=>{
 });
 route('POST','/api/workouts/:studentId/:workoutKey/exercises',async(req,res,p)=>{
   const b=await readBody(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.studentId,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   const w=await dbGet('SELECT id FROM workouts WHERE student_id=? AND workout_key=?', p.studentId,p.workoutKey);
   if(!w) return sendJson(res,404,{error:'Treino não encontrado.'});
   const count=(await dbGet('SELECT COUNT(*) as c FROM exercises WHERE workout_id=?', w.id)).c;
@@ -607,6 +628,9 @@ route('POST','/api/workouts/:studentId/:workoutKey/exercises',async(req,res,p)=>
 });
 route('PUT','/api/exercises/:id',async(req,res,p)=>{
   const b=await readBody(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  const owns=await dbGet('SELECT e.id FROM exercises e JOIN workouts w ON w.id=e.workout_id JOIN users u ON u.id=w.student_id WHERE e.id=? AND u.personal_id=?', p.id,pid);
+  if(!owns) return sendJson(res,404,{error:'Exercício não encontrado.'});
   const fields=[];const vals=[];
   if(b.carga!==undefined){fields.push('carga=?');vals.push(b.carga);}
   if(b.series!==undefined){fields.push('series=?');vals.push(b.series);}
@@ -619,6 +643,9 @@ route('PUT','/api/exercises/:id',async(req,res,p)=>{
   sendJson(res,200,{ok:true});
 });
 route('DELETE','/api/exercises/:id',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  const owns=await dbGet('SELECT e.id FROM exercises e JOIN workouts w ON w.id=e.workout_id JOIN users u ON u.id=w.student_id WHERE e.id=? AND u.personal_id=?', p.id,pid);
+  if(!owns) return sendJson(res,404,{error:'Exercício não encontrado.'});
   await dbRun('DELETE FROM exercises WHERE id=?', p.id);
   sendJson(res,200,{ok:true});
 });
@@ -627,11 +654,15 @@ route('DELETE','/api/exercises/:id',async(req,res,p)=>{
 route('POST','/api/exercise-logs',async(req,res)=>{
   const b=await readBody(req);
   if(!b.exerciseId||!b.studentId) return sendJson(res,400,{error:'Campos obrigatórios faltando.'});
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(b.studentId,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   await dbRun('INSERT INTO exercise_logs (id,exercise_id,student_id,date,carga_usada,reps_realizadas,rpe) VALUES (?,?,?,?,?,?,?)', uid('log'),b.exerciseId,b.studentId,b.date||now().slice(0,10),b.carga||null,b.reps||null,b.rpe||null);
   if(b.rpe!==undefined) await dbRun('UPDATE exercises SET done=1 WHERE id=?', b.exerciseId);
   sendJson(res,201,{ok:true});
 });
 route('POST','/api/students/:id/complete-today',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   await dbRun('UPDATE student_profiles SET adherence=MIN(100,adherence+3) WHERE user_id=?', p.id);
   await dbRun("DELETE FROM alerts WHERE student_id=? AND type='sem_treino'", p.id);
   sendJson(res,200,{ok:true});
@@ -639,8 +670,8 @@ route('POST','/api/students/:id/complete-today',async(req,res,p)=>{
 
 // ── SUGESTÃO DE CARGA PELA IA (RPE + 10RM) ───────────────────
 route('POST','/api/students/:id/suggest-loads',async(req,res,p)=>{
-  const pid=await resolvePersonalId(req);
-  // para cada exercício com log de RPE, calcular carga sugerida
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   const logs=await dbAll(`
     SELECT el.exercise_id,el.carga_usada,el.reps_realizadas,el.rpe,e.name,e.carga as current_carga
     FROM exercise_logs el
@@ -666,6 +697,9 @@ route('POST','/api/students/:id/suggest-loads',async(req,res,p)=>{
 
 route('POST','/api/exercises/:id/apply-suggestion',async(req,res,p)=>{
   const b=await readBody(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  const owns=await dbGet('SELECT e.id FROM exercises e JOIN workouts w ON w.id=e.workout_id JOIN users u ON u.id=w.student_id WHERE e.id=? AND u.personal_id=?', p.id,pid);
+  if(!owns) return sendJson(res,404,{error:'Exercício não encontrado.'});
   await dbRun('UPDATE exercises SET carga=? WHERE id=?', b.carga,p.id);
   if(b.suggestionId) await dbRun('DELETE FROM ai_suggestions WHERE id=?', b.suggestionId);
   sendJson(res,200,{ok:true});
@@ -675,7 +709,8 @@ route('POST','/api/exercises/:id/apply-suggestion',async(req,res,p)=>{
 route('POST','/api/students/:id/assessments',async(req,res,p)=>{
   const b=await readBody(req);
   const actorRole=b.actorRole||'personal';
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   const computed=computeForTipo(b.tipo,b.fields,b.protocolo);
   const aid=uid('ass');
   await dbRun('INSERT INTO assessments (id,student_id,tipo,protocolo,date,fields_json,computed_json,created_by) VALUES (?,?,?,?,?,?,?,?)', aid,p.id,b.tipo,b.protocolo||null,b.date||'—',JSON.stringify(b.fields||{}),JSON.stringify(computed),actorRole==='personal'?pid:p.id);
@@ -684,16 +719,20 @@ route('POST','/api/students/:id/assessments',async(req,res,p)=>{
 });
 route('PUT','/api/assessments/:id',async(req,res,p)=>{
   const b=await readBody(req);
-  const row=await dbGet('SELECT tipo,protocolo FROM assessments WHERE id=?', p.id);
+  const pid=await requirePid(req,res); if(!pid) return;
+  const row=await dbGet('SELECT a.tipo,a.protocolo FROM assessments a JOIN users u ON u.id=a.student_id WHERE a.id=? AND u.personal_id=?', p.id,pid);
   if(!row) return sendJson(res,404,{error:'Avaliação não encontrada.'});
   const computed=computeForTipo(row.tipo,b.fields,row.protocolo);
   await dbRun('UPDATE assessments SET fields_json=?,computed_json=?,date=COALESCE(?,date) WHERE id=?', JSON.stringify(b.fields||{}),JSON.stringify(computed),b.date||null,p.id);
-  await audit(null,'personal','update','assessment',p.id,{fields:b.fields});
+  await audit(pid,'personal','update','assessment',p.id,{fields:b.fields});
   sendJson(res,200,{computed});
 });
 route('DELETE','/api/assessments/:id',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  const row=await dbGet('SELECT a.id FROM assessments a JOIN users u ON u.id=a.student_id WHERE a.id=? AND u.personal_id=?', p.id,pid);
+  if(!row) return sendJson(res,404,{error:'Avaliação não encontrada.'});
   await dbRun('DELETE FROM assessments WHERE id=?', p.id);
-  await audit(null,'personal','delete','assessment',p.id,null);
+  await audit(pid,'personal','delete','assessment',p.id,null);
   sendJson(res,200,{ok:true});
 });
 
@@ -701,24 +740,36 @@ route('DELETE','/api/assessments/:id',async(req,res,p)=>{
 route('POST','/api/students/:id/messages',async(req,res,p)=>{
   const b=await readBody(req);
   if(!b.text||!b.text.trim()) return sendJson(res,400,{error:'Mensagem vazia.'});
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   await dbRun('INSERT INTO messages (id,student_id,from_role,text) VALUES (?,?,?,?)', uid('msg'),p.id,b.from,b.text.trim());
   sendJson(res,201,{ok:true});
 });
 route('DELETE','/api/alerts/:id',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  const row=await dbGet('SELECT a.id FROM alerts a JOIN users u ON u.id=a.student_id WHERE a.id=? AND u.personal_id=?', p.id,pid);
+  if(!row) return sendJson(res,404,{error:'Alerta não encontrado.'});
   await dbRun('DELETE FROM alerts WHERE id=?', p.id);
   sendJson(res,200,{ok:true});
 });
 route('POST','/api/students/:id/alerts',async(req,res,p)=>{
   const b=await readBody(req);
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   const aid=uid('al');
   await dbRun('INSERT INTO alerts (id,student_id,type,text) VALUES (?,?,?,?)', aid,p.id,b.type||'geral',b.text);
   sendJson(res,201,{id:aid});
 });
 route('DELETE','/api/students/:id/alerts/by-type/:type',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  if(!await studentBelongsTo(p.id,pid)) return sendJson(res,404,{error:'Aluno não encontrado.'});
   await dbRun('DELETE FROM alerts WHERE student_id=? AND type=?', p.id,p.type);
   sendJson(res,200,{ok:true});
 });
 route('DELETE','/api/ai-suggestions/:id',async(req,res,p)=>{
+  const pid=await requirePid(req,res); if(!pid) return;
+  const row=await dbGet('SELECT g.id FROM ai_suggestions g JOIN users u ON u.id=g.student_id WHERE g.id=? AND u.personal_id=?', p.id,pid);
+  if(!row) return sendJson(res,404,{error:'Sugestão não encontrada.'});
   await dbRun('DELETE FROM ai_suggestions WHERE id=?', p.id);
   sendJson(res,200,{ok:true});
 });
@@ -726,7 +777,7 @@ route('DELETE','/api/ai-suggestions/:id',async(req,res,p)=>{
 // ── IA: COMANDO LIVRE ─────────────────────────────────────────
 route('POST','/api/ai-command',async(req,res)=>{
   const b=await readBody(req);
-  const pid=await resolvePersonalId(req);
+  const pid=await requirePid(req,res); if(!pid) return;
   const cmd=(b.command||'').trim();
   if(!cmd) return sendJson(res,400,{ok:false,msg:'Comando vazio.'});
   const names=(await dbAll("SELECT name FROM users WHERE role='aluno' AND personal_id=?", pid)).map(s=>s.name).join(', ');
